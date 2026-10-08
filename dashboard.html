@@ -394,10 +394,7 @@ async function renderSections(){
   sections.sort(function(a, b){
     return (a.order || 50) - (b.order || 50);
   });
-
-  if (isAdmin){
     sections.push(ADMIN_SECTION);
-  }
 
   sections.forEach(function(s){
     const hasUrl = s.url && s.url.trim() !== '';
