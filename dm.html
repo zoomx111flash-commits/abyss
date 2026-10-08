@@ -126,7 +126,6 @@
     border-color: var(--primary, #ff1e3c);
   }
 
-  /* Filter tabs */
   .filter-tabs {
     display: flex;
     padding: 0.75rem 1rem 0;
@@ -208,18 +207,6 @@
     position: relative;
   }
 
-  .contact-avatar .online-dot {
-    position: absolute;
-    bottom: -2px;
-    right: -2px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--success, #00ff88);
-    border: 2px solid var(--card-solid, #0a0a12);
-    box-shadow: 0 0 10px var(--success, #00ff88);
-  }
-
   .contact-info {
     flex: 1;
     min-width: 0;
@@ -249,22 +236,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-
-  .contact-badge {
-    background: var(--primary, #ff1e3c);
-    color: #000;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    font-weight: 900;
-    min-width: 20px;
-    height: 20px;
-    padding: 0 6px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 0 10px var(--primary-glow, rgba(255,30,60,0.6));
   }
 
   .contact-fav-btn {
@@ -576,15 +547,14 @@
     text-transform: uppercase;
   }
 
-  .video-tile .placeholder {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
+  .placeholder-full {
+    grid-column: 1 / -1;
+    padding: 3rem;
+    text-align: center;
     color: var(--text-mute, #3a3a48);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
     text-transform: uppercase;
   }
 
@@ -639,12 +609,8 @@
       height: auto;
       min-height: 100vh;
     }
-    .sidebar {
-      max-height: 300px;
-    }
-    .chat-area {
-      min-height: 60vh;
-    }
+    .sidebar { max-height: 300px; }
+    .chat-area { min-height: 60vh; }
     .dm-msg { max-width: 85%; }
     .video-grid { grid-template-columns: 1fr; }
   }
@@ -703,15 +669,17 @@
       <div class="call-status" id="callStatus">Connecting...</div>
     </div>
 
-    <div class="video-grid">
-      <div class="video-tile">
+    <div class="video-grid" id="videoGrid">
+      <div class="video-tile" id="localVideoTile" style="display:none;">
         <video id="localVideo" autoplay muted playsinline></video>
-        <div class="tile-label" data-i18n="dm.you">YOU</div>
+        <div class="tile-label">YOU</div>
       </div>
-      <div class="video-tile">
+      <div class="video-tile" id="remoteVideoTile" style="display:none;">
         <video id="remoteVideo" autoplay playsinline></video>
         <div class="tile-label" id="remoteLabel">REMOTE</div>
-        <div class="placeholder" id="remotePlaceholder">Waiting...</div>
+      </div>
+      <div class="placeholder-full" id="remotePlaceholder">
+        Waiting for connection...
       </div>
     </div>
 
@@ -823,7 +791,6 @@ function escapeHtml(s){
 }
 
 function chatIdFor(a, b){
-  // دائمًا نفس الترتيب أبجديًا عشان ما ننشئ محادثتين
   const sorted = [a, b].sort();
   return sorted[0] + '__' + sorted[1];
 }
@@ -851,7 +818,6 @@ onAuthStateChanged(auth, async function(user){
     currentUser = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
   }
 
-  // Load favorites
   try {
     const favSnap = await getDoc(doc(db, 'favorites', currentUser));
     if (favSnap.exists()){
@@ -997,7 +963,7 @@ async function openChat(contact){
         </div>
         <div>
           <div class="chat-header-name">${escapeHtml(contact.username)}</div>
-          <div class="chat-header-status">● ${contact.realName || 'Online'}</div>
+          <div class="chat-header-status">● ${escapeHtml(contact.realName || 'Online')}</div>
         </div>
       </div>
       <div class="chat-header-actions">
@@ -1013,7 +979,6 @@ async function openChat(contact){
     </form>
   `;
 
-  // Listen to messages
   if (unsubMessages) unsubMessages();
 
   const q = query(
@@ -1031,13 +996,11 @@ async function openChat(contact){
     markAsRead(snap);
   });
 
-  // Form submit
   document.getElementById('dmForm').addEventListener('submit', async function(e){
     e.preventDefault();
     await sendDM();
   });
 
-  // Call buttons
   document.getElementById('callVoice').addEventListener('click', function(){
     startCall('voice');
   });
@@ -1045,7 +1008,12 @@ async function openChat(contact){
     startCall('video');
   });
   document.getElementById('callScreen').addEventListener('click', function(){
-    startCall('screen');
+    startCall('voice');
+    // افتح الشير بعد 1.5 ثانية
+    setTimeout(function(){
+      const btnScreen = document.getElementById('btnScreen');
+      if (btnScreen) btnScreen.click();
+    }, 1500);
   });
 }
 
@@ -1078,7 +1046,6 @@ function renderMessages(messages){
     container.appendChild(div);
   });
 
-  // Lightbox
   container.querySelectorAll('img[data-img]').forEach(function(img){
     img.addEventListener('click', function(){
       window.open(img.src, '_blank');
@@ -1160,7 +1127,8 @@ let currentCall = null;
 let localStream = null;
 let screenStream = null;
 let micEnabled = true;
-let camEnabled = true;
+let camEnabled = false;  // ✅ مقفلة افتراضياً
+let callType = null;
 
 function getPeerId(username){
   return 'abyss-' + username.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -1180,7 +1148,6 @@ function initPeer(){
   });
 
   peer.on('call', function(call){
-    // Incoming call
     const confirmCall = confirm('📞 ' + call.peer + ' is calling you. Accept?');
     if (confirmCall){
       answerCall(call);
@@ -1188,49 +1155,72 @@ function initPeer(){
       call.close();
     }
   });
+
+  peer.on('error', function(err){
+    console.error('Peer error:', err);
+  });
 }
 
-async function getMedia(video, screen){
-  try {
-    if (screen){
-      return await navigator.mediaDevices.getDisplayMedia({
-        video: true,
-        audio: false
-      });
-    }
-    return await navigator.mediaDevices.getUserMedia({
-      video: video ? { width: 640, height: 480 } : false,
-      audio: true
-    });
-  } catch(e){
-    console.error('getMedia error:', e);
-    throw e;
-  }
+/* ✅ جيب المايك فقط */
+async function getAudioOnly(){
+  return await navigator.mediaDevices.getUserMedia({
+    video: false,
+    audio: true
+  });
+}
+
+/* ✅ جيب المايك + الكاميرا */
+async function getAudioVideo(){
+  return await navigator.mediaDevices.getUserMedia({
+    video: { width: 640, height: 480 },
+    audio: true
+  });
+}
+
+/* ✅ جيب الشاشة */
+async function getScreen(){
+  return await navigator.mediaDevices.getDisplayMedia({
+    video: { cursor: 'always' },
+    audio: false
+  });
 }
 
 async function startCall(type){
   if (!currentContact) return;
   initPeer();
 
+  callType = type;
+
   const modal = document.getElementById('callModal');
   const title = document.getElementById('callTitle');
   const status = document.getElementById('callStatus');
 
   modal.classList.add('active');
-  title.textContent = type === 'voice' ? '🎤 Voice Call' : type === 'video' ? '📷 Video Call' : '🖥 Screen Share';
+  title.textContent = type === 'voice' ? '🎤 Voice Call' : '📷 Video Call';
   status.textContent = 'Calling ' + currentContact.username + '...';
 
+  camEnabled = (type === 'video');
+  micEnabled = true;
+
   try {
-    if (type === 'screen'){
-      screenStream = await getMedia(false, true);
-      localStream = screenStream;
+    if (type === 'video'){
+      localStream = await getAudioVideo();
     } else {
-      localStream = await getMedia(type === 'video');
+      localStream = await getAudioOnly();
     }
 
     const localVideo = document.getElementById('localVideo');
     localVideo.srcObject = localStream;
-    localVideo.style.display = type === 'voice' ? 'none' : 'block';
+
+    if (!camEnabled){
+      localVideo.style.display = 'none';
+      document.getElementById('localVideoTile').style.display = 'none';
+    } else {
+      localVideo.style.display = 'block';
+      document.getElementById('localVideoTile').style.display = 'block';
+    }
+
+    updateCallButtons();
 
     const remoteId = getPeerId(currentContact.username);
     currentCall = peer.call(remoteId, localStream);
@@ -1240,13 +1230,14 @@ async function startCall(type){
         const remoteVideo = document.getElementById('remoteVideo');
         remoteVideo.srcObject = remoteStream;
         document.getElementById('remotePlaceholder').style.display = 'none';
+        document.getElementById('remoteVideoTile').style.display = 'block';
         status.textContent = '● Connected';
       });
 
       currentCall.on('close', endCall);
       currentCall.on('error', function(err){
         console.error('Call error:', err);
-        status.textContent = '✕ Error: ' + err.message;
+        status.textContent = '✕ ' + err.message;
       });
     }
   } catch(e){
@@ -1258,36 +1249,54 @@ async function startCall(type){
   bindCallControls();
 }
 
-function answerCall(call){
+async function answerCall(call){
   const modal = document.getElementById('callModal');
   modal.classList.add('active');
   document.getElementById('callTitle').textContent = '📞 Incoming Call';
   document.getElementById('callStatus').textContent = 'Connecting...';
 
-  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-    .then(function(stream){
-      localStream = stream;
-      const localVideo = document.getElementById('localVideo');
-      localVideo.srcObject = stream;
+  callType = 'voice';
+  camEnabled = false;
+  micEnabled = true;
 
-      call.answer(stream);
+  try {
+    localStream = await getAudioOnly();
 
-      call.on('stream', function(remoteStream){
-        const remoteVideo = document.getElementById('remoteVideo');
-        remoteVideo.srcObject = remoteStream;
-        document.getElementById('remotePlaceholder').style.display = 'none';
-        document.getElementById('callStatus').textContent = '● Connected';
-      });
+    const localVideo = document.getElementById('localVideo');
+    localVideo.srcObject = localStream;
+    localVideo.style.display = 'none';
+    document.getElementById('localVideoTile').style.display = 'none';
 
-      call.on('close', endCall);
-      currentCall = call;
-      bindCallControls();
-    })
-    .catch(function(err){
-      console.error(err);
-      call.close();
-      endCall();
+    updateCallButtons();
+
+    call.answer(localStream);
+
+    call.on('stream', function(remoteStream){
+      const remoteVideo = document.getElementById('remoteVideo');
+      remoteVideo.srcObject = remoteStream;
+      document.getElementById('remotePlaceholder').style.display = 'none';
+      document.getElementById('remoteVideoTile').style.display = 'block';
+      document.getElementById('callStatus').textContent = '● Connected';
     });
+
+    call.on('close', endCall);
+    currentCall = call;
+    bindCallControls();
+  } catch(err){
+    console.error(err);
+    call.close();
+    endCall();
+  }
+}
+
+function updateCallButtons(){
+  const btnMic = document.getElementById('btnMic');
+  const btnCam = document.getElementById('btnCam');
+  const btnScreen = document.getElementById('btnScreen');
+
+  btnMic.classList.toggle('active', !micEnabled);
+  btnCam.classList.toggle('active', camEnabled);
+  btnScreen.classList.remove('active');
 }
 
 function bindCallControls(){
@@ -1296,36 +1305,120 @@ function bindCallControls(){
   const btnScreen = document.getElementById('btnScreen');
   const btnHangup = document.getElementById('btnHangup');
 
+  // ✅ زر المايك
   btnMic.onclick = function(){
     if (!localStream) return;
     micEnabled = !micEnabled;
     localStream.getAudioTracks().forEach(function(t){ t.enabled = micEnabled; });
-    btnMic.classList.toggle('active', !micEnabled);
+    updateCallButtons();
   };
 
-  btnCam.onclick = function(){
+  // ✅ زر الكاميرا — يفتحها ويسكرها
+  btnCam.onclick = async function(){
     if (!localStream) return;
-    camEnabled = !camEnabled;
-    localStream.getVideoTracks().forEach(function(t){ t.enabled = camEnabled; });
-    btnCam.classList.toggle('active', !camEnabled);
-  };
 
-  btnScreen.onclick = async function(){
-    try {
-      const screenStreamNew = await getMedia(false, true);
-      const screenTrack = screenStreamNew.getVideoTracks()[0];
+    if (camEnabled){
+      // سكّر الكاميرا
+      const videoTracks = localStream.getVideoTracks();
+      videoTracks.forEach(function(t){ t.stop(); });
+      videoTracks.forEach(function(t){ localStream.removeTrack(t); });
+
+      document.getElementById('localVideo').srcObject = null;
+      camEnabled = false;
 
       if (currentCall && currentCall.peerConnection){
         const sender = currentCall.peerConnection.getSenders().find(function(s){
           return s.track && s.track.kind === 'video';
         });
-        if (sender) await sender.replaceTrack(screenTrack);
-
-        document.getElementById('localVideo').srcObject = screenStreamNew;
-        screenStream = screenStreamNew;
+        if (sender) await sender.replaceTrack(null);
       }
+    } else {
+      // افتح الكاميرا
+      try {
+        const videoStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480 }
+        });
+        const videoTrack = videoStream.getVideoTracks()[0];
+        localStream.addTrack(videoTrack);
+
+        document.getElementById('localVideo').srcObject = localStream;
+        document.getElementById('localVideo').style.display = 'block';
+        document.getElementById('localVideoTile').style.display = 'block';
+
+        if (currentCall && currentCall.peerConnection){
+          const sender = currentCall.peerConnection.getSenders().find(function(s){
+            return !s.track || s.track.kind === 'video';
+          });
+          if (sender){
+            await sender.replaceTrack(videoTrack);
+          } else {
+            currentCall.peerConnection.addTrack(videoTrack, localStream);
+          }
+        }
+
+        camEnabled = true;
+      } catch(e){
+        console.error('Camera error:', e);
+        alert('⚠ Cannot open camera: ' + e.message);
+      }
+    }
+    updateCallButtons();
+  };
+
+  // ✅ زر الشاشة
+  btnScreen.onclick = async function(){
+    // إذا الشاشة شغالة، سكرها
+    if (screenStream){
+      screenStream.getTracks().forEach(function(t){ t.stop(); });
+      screenStream = null;
+
+      if (currentCall && currentCall.peerConnection){
+        const sender = currentCall.peerConnection.getSenders().find(function(s){
+          return s.track && s.track.kind === 'video';
+        });
+
+        if (camEnabled && localStream){
+          const camTrack = localStream.getVideoTracks()[0];
+          if (sender && camTrack) await sender.replaceTrack(camTrack);
+        } else {
+          if (sender) await sender.replaceTrack(null);
+        }
+      }
+
+      document.getElementById('localVideo').srcObject = localStream;
+      if (!camEnabled) document.getElementById('localVideo').style.display = 'none';
+      btnScreen.classList.remove('active');
+      return;
+    }
+
+    // افتح الشاشة
+    try {
+      screenStream = await getScreen();
+      const screenTrack = screenStream.getVideoTracks()[0];
+
+      document.getElementById('localVideo').srcObject = screenStream;
+      document.getElementById('localVideo').style.display = 'block';
+      document.getElementById('localVideoTile').style.display = 'block';
+
+      if (currentCall && currentCall.peerConnection){
+        const sender = currentCall.peerConnection.getSenders().find(function(s){
+          return s.track && s.track.kind === 'video';
+        });
+        if (sender){
+          await sender.replaceTrack(screenTrack);
+        } else {
+          currentCall.peerConnection.addTrack(screenTrack, screenStream);
+        }
+      }
+
+      screenTrack.onended = function(){
+        btnScreen.click();
+      };
+
+      btnScreen.classList.add('active');
     } catch(e){
-      console.error(e);
+      console.error('Screen error:', e);
+      alert('⚠ Cannot share screen: ' + e.message);
     }
   };
 
@@ -1337,10 +1430,16 @@ function endCall(){
   if (localStream){ localStream.getTracks().forEach(function(t){ t.stop(); }); localStream = null; }
   if (screenStream){ screenStream.getTracks().forEach(function(t){ t.stop(); }); screenStream = null; }
 
+  camEnabled = false;
+  micEnabled = true;
+  callType = null;
+
   document.getElementById('callModal').classList.remove('active');
   document.getElementById('localVideo').srcObject = null;
   document.getElementById('remoteVideo').srcObject = null;
-  document.getElementById('remotePlaceholder').style.display = 'flex';
+  document.getElementById('remotePlaceholder').style.display = 'block';
+  document.getElementById('localVideoTile').style.display = 'none';
+  document.getElementById('remoteVideoTile').style.display = 'none';
 }
 
 /* ============ REACT TO LANGUAGE ============ */
