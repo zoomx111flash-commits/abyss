@@ -212,16 +212,108 @@ onAuthStateChanged(auth, async function(user){
     window.location.replace('index.html');
     return;
   }
-  const stored = sessionStorage.getItem('abyss_user');
-  currentUser = stored || user.email.split('@')[0];
-  isAdmin = (currentUser === ADMIN_USER);
+
+  // ✅ جيب المستخدم بالشكل الصحيح
+  let stored = sessionStorage.getItem('abyss_user');
+  if (!stored && user.email){
+    const emailUser = user.email.split('@')[0];
+    stored = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
+  }
+  currentUser = stored || 'unknown';
+  isAdmin = (currentUser.toLowerCase() === 'devil-0');
+
+  // ✅ افحص إذا المستخدم مطرود
+  let isKicked = false;
+  try {
+    const settingsSnap = await getDoc(doc(db, 'settings', 'global'));
+    if (settingsSnap.exists()){
+      const settings = settingsSnap.data();
+      const kicked = settings.kicked || [];
+      // Devil-0 لا يُطرد أبداً
+      if (currentUser.toLowerCase() !== 'devil-0' && kicked.indexOf(currentUser) !== -1){
+        isKicked = true;
+      }
+    }
+  } catch(e){
+    console.error('access check failed:', e);
+  }
 
   const badge = document.getElementById('userBadge');
+  const grid = document.getElementById('sectionGrid');
+  const adminPanel = document.getElementById('adminPanel');
+
+  // ============================================================
+  // ✅ إذا المستخدم مطرود — أخفِ كل الأقسام واعرض رسالة طرد
+  // ============================================================
+  if (isKicked){
+    badge.textContent = currentUser;
+    badge.style.background = 'rgba(120, 0, 0, 0.4)';
+    badge.style.color = '#ff4444';
+    badge.style.borderColor = '#ff0000';
+    badge.style.boxShadow = '0 0 20px rgba(255, 0, 0, 0.8)';
+
+    // أخفِ لوحة الأدمن
+    adminPanel.classList.remove('active');
+
+    // اعرض شاشة الطرد بدل الأقسام
+    grid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center;
+        padding: 4rem 2rem; background: rgba(10,0,0,0.9);
+        border: 2px solid #ff0000; border-radius: 20px;
+        box-shadow: 0 0 60px rgba(255,0,0,0.7), inset 0 0 40px rgba(255,0,0,0.1);
+        animation: pulseKick 2s infinite;">
+        <div style="font-size: 5rem; margin-bottom: 1rem;
+          text-shadow: 0 0 30px #ff0000;">🚫</div>
+        <h1 style="color: #ff1a1a; font-size: 1.8rem; letter-spacing: 6px;
+          text-transform: uppercase; margin-bottom: 1rem;
+          text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;">
+          ACCESS DENIED
+        </h1>
+        <p style="color: #ff6666; font-size: 1rem; letter-spacing: 2px;
+          margin-bottom: 2rem; line-height: 1.6;">
+          تم طردك شخصياً من الموقع<br>
+          <span style="color: #991111; font-size: 0.85rem;">بواسطة المنشئ</span>
+        </p>
+        <div style="border-top: 1px solid rgba(255,0,0,0.3);
+          padding-top: 1.5rem; margin-top: 1.5rem;">
+          <p style="color: #661111; font-size: 0.75rem;
+            letter-spacing: 2px; margin-bottom: 1rem;">
+            لا توجد فائدة من تسجيل الدخول مرة أخرى<br>
+            <span style="color: #440000; font-size: 0.7rem;">THERE IS NO POINT IN TRYING AGAIN</span>
+          </p>
+          <button onclick="(async()=>{
+            const {getAuth, signOut} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+            sessionStorage.clear();
+            await signOut(getAuth());
+            window.location.href = 'index.html';
+          })()" 
+          style="padding: 0.8rem 2rem; background: transparent;
+            border: 1px solid #ff0000; color: #ff6666;
+            border-radius: 8px; cursor: pointer;
+            font-family: 'Courier New', monospace; letter-spacing: 3px;
+            font-size: 0.8rem; text-transform: uppercase;
+            transition: all 0.2s;"
+          onmouseover="this.style.background='#ff0000';this.style.color='#000'"
+          onmouseout="this.style.background='transparent';this.style.color='#ff6666'">
+            ⏻ Exit
+          </button>
+        </div>
+      </div>
+    `;
+
+    // خلي الجلسة تحتوي على علامة "طرد"
+    sessionStorage.setItem('abyss_kicked', 'true');
+    return;
+  }
+
+  // ✅ المستخدم عادي — اعرض الأقسام بشكل طبيعي
+  sessionStorage.removeItem('abyss_kicked');
+
   badge.textContent = currentUser + (isAdmin ? ' ★' : '');
   if (isAdmin) badge.classList.add('admin');
 
   if (isAdmin){
-    document.getElementById('adminPanel').classList.add('active');
+    adminPanel.classList.add('active');
   }
 
   await renderSections();
