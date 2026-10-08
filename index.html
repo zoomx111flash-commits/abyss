@@ -7,31 +7,16 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<script src="theme.js"></script>
+
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0;
-    font-family: 'Inter', sans-serif; }
-
-  :root {
-    --bg: #050508;
-    --bg-2: #0a0a12;
-    --card: rgba(15, 15, 25, 0.7);
-    --border: rgba(255, 30, 60, 0.25);
-    --border-hover: rgba(255, 30, 60, 0.6);
-    --red: #ff1e3c;
-    --red-glow: rgba(255, 30, 60, 0.5);
-    --red-soft: rgba(255, 30, 60, 0.15);
-    --text: #e8e8f0;
-    --text-dim: #6a6a7a;
-    --text-mute: #3a3a4a;
-    --success: #00ff88;
-    --error: #ff1e3c;
-  }
-
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
   html, body { height: 100%; }
 
   body {
-    background: var(--bg);
-    color: var(--text);
+    background: var(--bg, #030308);
+    color: var(--text, #ebebf5);
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -39,53 +24,43 @@
     padding: 1.5rem;
     overflow: hidden;
     position: relative;
-    font-family: 'Inter', sans-serif;
+    transition: background 0.4s, color 0.4s;
   }
 
-  /* ============ BACKGROUND LAYERS ============ */
+  /* ============ BACKGROUND ============ */
   .bg-grid {
     position: fixed;
     inset: 0;
     background-image:
-      linear-gradient(rgba(255, 30, 60, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 30, 60, 0.04) 1px, transparent 1px);
-    background-size: 50px 50px;
+      linear-gradient(var(--border, rgba(255,30,60,0.05)) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border, rgba(255,30,60,0.05)) 1px, transparent 1px);
+    background-size: 60px 60px;
     z-index: 0;
     pointer-events: none;
-    mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
-    -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    animation: gridMove 20s linear infinite;
+  }
+
+  @keyframes gridMove {
+    0% { background-position: 0 0, 0 0; }
+    100% { background-position: 60px 60px, 60px 60px; }
   }
 
   .bg-glow {
     position: fixed;
     inset: 0;
     background:
-      radial-gradient(circle at 20% 30%, rgba(255, 30, 60, 0.15) 0%, transparent 40%),
-      radial-gradient(circle at 80% 70%, rgba(120, 0, 255, 0.1) 0%, transparent 40%),
-      radial-gradient(circle at 50% 50%, rgba(255, 30, 60, 0.08) 0%, transparent 60%);
-    z-index: 0;
+      radial-gradient(circle at 15% 20%, var(--primary-glow, rgba(255, 30, 60, 0.18)) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, var(--primary-glow, rgba(255, 30, 60, 0.12)) 0%, transparent 45%);
+    z-index: 1;
     pointer-events: none;
     animation: bgPulse 8s ease-in-out infinite;
   }
 
   @keyframes bgPulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-  }
-
-  .bg-scan {
-    position: fixed;
-    inset: 0;
-    background: linear-gradient(
-      to bottom,
-      transparent 0%,
-      rgba(255, 30, 60, 0.03) 50%,
-      transparent 100%
-    );
-    background-size: 100% 8px;
-    z-index: 1;
-    pointer-events: none;
-    opacity: 0.4;
+    50% { opacity: 0.65; }
   }
 
   #matrixCanvas {
@@ -93,55 +68,100 @@
     inset: 0;
     width: 100%;
     height: 100%;
-    z-index: 1;
-    opacity: 0.06;
+    z-index: 2;
     pointer-events: none;
+    opacity: 0.55;
+  }
+
+  .bg-scan {
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 3px,
+      var(--border, rgba(255, 30, 60, 0.015)) 3px,
+      var(--border, rgba(255, 30, 60, 0.015)) 4px
+    );
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0.6;
+  }
+
+  /* ============ TOP-RIGHT BUTTONS ============ */
+  .top-buttons {
+    position: fixed;
+    top: 1.25rem;
+    right: 1.25rem;
+    display: flex;
+    gap: 0.5rem;
+    z-index: 100;
+  }
+
+  [dir="rtl"] .top-buttons {
+    right: auto;
+    left: 1.25rem;
+  }
+
+  .top-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: var(--card, rgba(10, 10, 18, 0.85));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border, rgba(255, 30, 60, 0.25));
+    color: var(--text, #ebebf5);
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+    text-decoration: none;
+  }
+
+  .top-btn:hover {
+    border-color: var(--primary, #ff1e3c);
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px var(--primary-glow, rgba(255,30,60,0.5));
   }
 
   /* ============ LOGIN CARD ============ */
   .login-card {
     position: relative;
     z-index: 10;
-    background: var(--card);
-    backdrop-filter: blur(24px) saturate(150%);
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    background: var(--card, rgba(8, 8, 14, 0.55));
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
     border-radius: 24px;
-    padding: 3rem 2.5rem 2.5rem;
+    padding: 3.25rem 2.75rem 2.75rem;
     width: 100%;
-    max-width: 440px;
-    border: 1px solid var(--border);
+    max-width: 460px;
+    border: 1px solid var(--border, rgba(255, 30, 60, 0.3));
     box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.03) inset,
-      0 24px 60px -20px rgba(255, 30, 60, 0.3),
-      0 8px 30px -10px rgba(0, 0, 0, 0.8);
-    animation: cardEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+      0 32px 80px -25px var(--primary-glow, rgba(255, 30, 60, 0.5)),
+      0 12px 40px -12px rgba(0, 0, 0, 0.9);
+    animation: cardEnter 1s cubic-bezier(0.16, 1, 0.3, 1);
     overflow: hidden;
+    isolation: isolate;
   }
 
   @keyframes cardEnter {
-    from {
-      opacity: 0;
-      transform: translateY(20px) scale(0.98);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
+    from { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(10px); }
+    to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
   }
 
-  /* خط علوي متحرك */
   .login-card::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left: 0; right: 0;
     height: 2px;
-    background: linear-gradient(90deg,
-      transparent,
-      var(--red) 50%,
-      transparent);
-    animation: topLine 3s linear infinite;
+    background: linear-gradient(90deg, transparent, var(--primary, #ff1e3c) 50%, transparent);
+    animation: topLine 4s linear infinite;
+    box-shadow: 0 0 12px var(--primary-glow, rgba(255,30,60,0.6));
   }
 
   @keyframes topLine {
@@ -149,98 +169,92 @@
     100% { transform: translateX(100%); }
   }
 
-  /* ============ TERMINAL HEADER ============ */
-  .terminal-header {
+  .corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--primary, #ff1e3c);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .corner.tl { top: 12px; left: 12px; border-right: none; border-bottom: none; }
+  .corner.tr { top: 12px; right: 12px; border-left: none; border-bottom: none; }
+  .corner.bl { bottom: 12px; left: 12px; border-right: none; border-top: none; }
+  .corner.br { bottom: 12px; right: 12px; border-left: none; border-top: none; }
+
+  /* Status bar */
+  .status-bar {
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 2rem;
-    padding-bottom: 1.25rem;
-    border-bottom: 1px solid rgba(255, 30, 60, 0.15);
-  }
-
-  .dot {
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    transition: transform 0.2s;
-  }
-  .dot:hover { transform: scale(1.2); }
-  .dot.red {
-    background: #ff5f56;
-    box-shadow: 0 0 8px rgba(255, 95, 86, 0.6);
-  }
-  .dot.yellow {
-    background: #ffbd2e;
-    box-shadow: 0 0 8px rgba(255, 189, 46, 0.6);
-  }
-  .dot.green {
-    background: #27c93f;
-    box-shadow: 0 0 8px rgba(39, 201, 63, 0.6);
-  }
-
-  .terminal-title {
-    margin-left: auto;
+    justify-content: space-between;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border, rgba(255, 30, 60, 0.15));
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
-    color: var(--text-dim);
-    letter-spacing: 2px;
+    font-size: 0.65rem;
+    color: var(--text-mute, #3a3a48);
+    letter-spacing: 1.5px;
     text-transform: uppercase;
   }
 
-  /* ============ TITLE ============ */
+  .status-left, .status-right {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--success, #00ff88);
+    box-shadow: 0 0 8px var(--success, #00ff88);
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  /* Brand */
   .brand {
     text-align: center;
-    margin-bottom: 2.25rem;
+    margin-bottom: 2rem;
   }
 
   .brand-title {
-    font-size: 2.4rem;
+    font-size: 3rem;
     font-weight: 900;
-    letter-spacing: 8px;
-    color: var(--red);
+    letter-spacing: 10px;
+    color: var(--text, #ebebf5);
     text-transform: uppercase;
     line-height: 1;
-    margin-bottom: 0.65rem;
-    text-shadow:
-      0 0 20px var(--red-glow),
-      0 0 40px rgba(255, 30, 60, 0.3);
+    margin-bottom: 0.75rem;
     position: relative;
-    animation: titleGlitch 4s infinite;
+    animation: titleGlitch 6s infinite;
+    text-shadow:
+      0 0 20px var(--primary-glow, rgba(255, 30, 60, 0.6)),
+      0 0 40px var(--primary-glow, rgba(255, 30, 60, 0.4));
   }
 
   @keyframes titleGlitch {
-    0%, 92%, 100% {
-      transform: translate(0);
-      text-shadow: 0 0 20px var(--red-glow), 0 0 40px rgba(255, 30, 60, 0.3);
-    }
-    93% {
-      transform: translate(-2px, 1px);
-      text-shadow: 2px 0 #00ffff, -2px 0 #ff00ff;
-    }
-    94% {
-      transform: translate(2px, -1px);
-      text-shadow: -2px 0 #00ffff, 2px 0 #ff00ff;
-    }
-    95% {
-      transform: translate(-1px, -1px);
-    }
-    96% {
-      transform: translate(1px, 1px);
-      text-shadow: 0 0 20px var(--red-glow);
-    }
+    0%, 88%, 100% { transform: translate(0); }
+    90% { transform: translate(-1px, 0); }
+    92% { transform: translate(1px, 0); }
+    94% { transform: translate(-1px, 0); }
   }
 
   .brand-sub {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem;
-    color: var(--text-mute);
+    color: var(--text-dim, #70707f);
     letter-spacing: 6px;
     text-transform: uppercase;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.75rem;
+    gap: 0.85rem;
   }
 
   .brand-sub::before,
@@ -248,12 +262,55 @@
     content: '';
     width: 24px;
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    background: linear-gradient(90deg, transparent, var(--primary, #ff1e3c), transparent);
   }
 
-  /* ============ INPUTS ============ */
+  /* Boot log */
+  .boot-log {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-mute, #3a3a48);
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+    padding: 0.85rem 1rem;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 8px;
+    border-left: 2px solid var(--primary, #ff1e3c);
+    overflow: hidden;
+    min-height: 60px;
+  }
+
+  .boot-line {
+    opacity: 0;
+    animation: bootLine 0.4s forwards;
+  }
+
+  .boot-line .ok { color: var(--success, #00ff88); }
+  .boot-line .path { color: var(--text-dim, #70707f); }
+
+  @keyframes bootLine {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .cursor-blink {
+    display: inline-block;
+    width: 6px;
+    height: 12px;
+    background: var(--primary, #ff1e3c);
+    animation: cursorBlink 1s steps(2) infinite;
+    vertical-align: middle;
+    box-shadow: 0 0 6px var(--primary, #ff1e3c);
+  }
+
+  @keyframes cursorBlink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  /* Inputs */
   .input-group {
-    margin-bottom: 1.1rem;
+    margin-bottom: 1.15rem;
     position: relative;
   }
 
@@ -264,77 +321,85 @@
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.68rem;
     font-weight: 500;
-    color: var(--text-dim);
-    margin-bottom: 0.55rem;
-    letter-spacing: 2px;
+    color: var(--text-dim, #70707f);
+    margin-bottom: 0.6rem;
+    letter-spacing: 2.5px;
     text-transform: uppercase;
+    transition: color 0.2s;
   }
+
+  .input-group.focused .input-label { color: var(--primary, #ff1e3c); }
 
   .input-label::before {
     content: '›';
-    color: var(--red);
+    color: var(--primary, #ff1e3c);
     font-weight: 700;
-    font-size: 0.9rem;
+    font-size: 1rem;
+    transition: transform 0.2s;
   }
+
+  [dir="rtl"] .input-label::before {
+    content: '‹';
+  }
+
+  .input-group.focused .input-label::before { transform: translateX(3px); }
 
   .input-wrapper {
     position: relative;
     display: flex;
     align-items: center;
-    background: rgba(5, 5, 10, 0.6);
+    background: rgba(5, 5, 12, 0.7);
     border-radius: 12px;
-    border: 1px solid rgba(255, 30, 60, 0.15);
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid var(--border, rgba(255, 30, 60, 0.2));
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     overflow: hidden;
   }
 
-  .input-wrapper::before {
+  .input-wrapper::after {
     content: '';
     position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg,
-      transparent,
-      rgba(255, 30, 60, 0.1),
-      transparent);
-    transform: translateX(-100%);
-    transition: transform 0.6s;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 1px;
+    background: var(--primary, #ff1e3c);
+    box-shadow: 0 0 10px var(--primary, #ff1e3c);
+    transform: translateX(-50%);
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-  .input-wrapper:focus-within::before {
-    transform: translateX(100%);
-  }
+  .input-wrapper:focus-within::after { width: 100%; }
 
   .input-wrapper:focus-within {
-    border-color: var(--border-hover);
-    background: rgba(10, 5, 10, 0.8);
-    box-shadow:
-      0 0 0 3px rgba(255, 30, 60, 0.1),
-      0 0 20px rgba(255, 30, 60, 0.15);
+    border-color: var(--border-hover, rgba(255, 30, 60, 0.65));
+    background: rgba(12, 5, 12, 0.85);
+    box-shadow: 0 0 0 3px var(--primary-glow, rgba(255, 30, 60, 0.1));
   }
 
   .input-wrapper input {
     width: 100%;
     background: transparent;
     border: none;
-    padding: 1rem 1.15rem;
+    padding: 1.05rem 1.15rem;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.95rem;
-    font-weight: 400;
-    color: var(--text);
+    color: var(--text, #ebebf5);
     outline: none;
     letter-spacing: 0.5px;
+    position: relative;
+    z-index: 1;
   }
 
   .input-wrapper input::placeholder {
-    color: var(--text-mute);
+    color: var(--text-mute, #3a3a48);
     font-weight: 300;
     letter-spacing: 1px;
   }
 
-  /* ============ BUTTON ============ */
+  /* Button */
   .btn-primary {
     width: 100%;
-    padding: 1.05rem;
+    padding: 1.15rem;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.82rem;
     font-weight: 700;
@@ -343,61 +408,47 @@
     color: #fff;
     border: none;
     border-radius: 12px;
-    background: linear-gradient(135deg, #ff1e3c, #cc0022);
+    background: linear-gradient(135deg, var(--primary, #ff1e3c) 0%, var(--primary-2, #cc0022) 50%, var(--primary, #ff1e3c) 100%);
+    background-size: 200% 200%;
     cursor: pointer;
     position: relative;
     overflow: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow:
-      0 4px 20px rgba(255, 30, 60, 0.4),
-      0 0 40px rgba(255, 30, 60, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    margin-top: 1.5rem;
+    box-shadow: 0 4px 24px var(--primary-glow, rgba(255, 30, 60, 0.45));
+    margin-top: 1.75rem;
+    animation: btnGradient 4s ease infinite;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
   }
 
-  .btn-primary::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transform: translateX(-100%);
-    transition: transform 0.6s;
-  }
-
-  .btn-primary:hover::before {
-    transform: translateX(100%);
+  @keyframes btnGradient {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
   }
 
   .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow:
-      0 8px 30px rgba(255, 30, 60, 0.5),
-      0 0 60px rgba(255, 30, 60, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 40px var(--primary-glow, rgba(255, 30, 60, 0.6));
   }
 
-  .btn-primary:active {
-    transform: translateY(0) scale(0.99);
-  }
+  .btn-primary:active { transform: translateY(0) scale(0.99); }
+  .btn-primary:disabled { opacity: 0.6; cursor: wait; transform: none; animation: none; }
 
-  .btn-primary:disabled {
-    opacity: 0.6;
-    cursor: wait;
-    transform: none;
-  }
-
-  /* ============ MESSAGE ============ */
+  /* Message */
   .message-area {
-    margin-top: 1.5rem;
+    margin-top: 1.75rem;
     padding: 1rem 1.15rem;
     border-radius: 12px;
     background: rgba(0, 0, 0, 0.4);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.78rem;
-    color: var(--text-dim);
+    color: var(--text-dim, #70707f);
     text-align: center;
-    letter-spacing: 1px;
-    border: 1px solid rgba(255, 30, 60, 0.1);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border: 1px solid var(--border, rgba(255, 30, 60, 0.15));
     min-height: 3.25rem;
     display: flex;
     align-items: center;
@@ -406,88 +457,136 @@
   }
 
   .message-area.success {
-    color: var(--success);
-    border-color: rgba(0, 255, 136, 0.4);
-    background: rgba(0, 255, 136, 0.05);
-    box-shadow: 0 0 25px rgba(0, 255, 136, 0.15);
+    color: var(--success, #00ff88);
+    border-color: rgba(0, 255, 136, 0.45);
+    background: rgba(0, 255, 136, 0.06);
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
   }
 
   .message-area.error {
-    color: var(--error);
-    border-color: rgba(255, 30, 60, 0.4);
-    background: rgba(255, 30, 60, 0.05);
-    box-shadow: 0 0 25px rgba(255, 30, 60, 0.15);
+    color: var(--primary, #ff1e3c);
+    border-color: var(--border-hover, rgba(255, 30, 60, 0.5));
+    background: rgba(255, 30, 60, 0.06);
+    box-shadow: 0 0 30px var(--primary-glow, rgba(255, 30, 60, 0.2));
   }
 
-  /* ============ SHAKE ============ */
+  /* Shake */
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-10px); }
-    40% { transform: translateX(10px); }
-    60% { transform: translateX(-6px); }
-    80% { transform: translateX(6px); }
+    15% { transform: translateX(-12px) rotate(-0.5deg); }
+    30% { transform: translateX(12px) rotate(0.5deg); }
+    45% { transform: translateX(-8px); }
+    60% { transform: translateX(8px); }
+    80% { transform: translateX(-4px); }
+  }
+  .shake { animation: shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+
+  /* Success flash */
+  .success-flash {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle, rgba(0, 255, 136, 0.4) 0%, transparent 70%);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .success-flash.active { animation: successFlash 0.8s ease-out; }
+  @keyframes successFlash {
+    0% { opacity: 0; }
+    30% { opacity: 1; }
+    100% { opacity: 0; }
   }
 
-  .shake { animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
-
-  /* ============ SCROLLBAR ============ */
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb {
-    background: rgba(255, 30, 60, 0.3);
-    border-radius: 4px;
-  }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 30, 60, 0.5); }
-
-  /* ============ MOBILE ============ */
+  /* Mobile */
   @media (max-width: 480px) {
     .login-card { padding: 2.25rem 1.5rem 1.75rem; border-radius: 20px; }
-    .brand-title { font-size: 1.9rem; letter-spacing: 5px; }
+    .brand-title { font-size: 2.1rem; letter-spacing: 6px; }
     body { padding: 1rem; }
+    .boot-log { font-size: 0.62rem; }
+    .top-buttons { top: 0.75rem; right: 0.75rem; }
+    .top-btn { width: 38px; height: 38px; font-size: 1rem; }
   }
+
+  [dir="rtl"] .status-bar { flex-direction: row-reverse; }
 </style>
 </head>
 <body>
 
 <div class="bg-grid"></div>
 <div class="bg-glow"></div>
-<div class="bg-scan"></div>
 <canvas id="matrixCanvas"></canvas>
+<div class="bg-scan"></div>
+
+<!-- Top buttons -->
+<div class="top-buttons">
+  <button class="top-btn" id="langTopBtn" title="Switch Language">🌐</button>
+  <a class="top-btn" href="settings.html" title="Settings">⚙</a>
+</div>
 
 <div class="login-card" id="loginCard">
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
 
-  <div class="terminal-header">
-    <span class="dot red"></span>
-    <span class="dot yellow"></span>
-    <span class="dot green"></span>
-    <span class="terminal-title">abyss://secure-shell</span>
+  <div class="status-bar">
+    <div class="status-left">
+      <span class="status-dot"></span>
+      <span data-i18n="login.secure_channel">Secure Channel</span>
+    </div>
+    <div class="status-right">
+      <span id="clock">--:--</span>
+    </div>
   </div>
 
   <div class="brand">
-    <div class="brand-title">ABYSS</div>
-    <div class="brand-sub">Hidden Network</div>
+    <div class="brand-title" data-i18n="login.title">ABYSS</div>
+    <div class="brand-sub" data-i18n="login.subtitle">Hidden Network</div>
   </div>
 
-  <form id="loginForm" onsubmit="return false;">
-    <div class="input-group">
-      <label class="input-label">Operator ID</label>
+  <div class="boot-log" id="bootLog"></div>
+
+  <form id="loginForm" onsubmit="return false;" autocomplete="off">
+    <!-- ✅ حقول وهمية لخداع Autofill -->
+    <input type="text" name="fake_user_field" style="display:none" tabindex="-1" autocomplete="off">
+    <input type="password" name="fake_pass_field" style="display:none" tabindex="-1" autocomplete="off">
+
+    <div class="input-group" id="groupUser">
+      <label class="input-label" data-i18n="login.operator">Operator ID</label>
       <div class="input-wrapper">
-        <input type="text" id="loginUser" placeholder="Username" autocomplete="off" spellcheck="false">
+        <input type="text" id="loginUser"
+          placeholder="Enter your operator id"
+          autocomplete="off" autocorrect="off" autocapitalize="off"
+          spellcheck="false" name="op_field_1" data-form-type="other"
+          readonly onfocus="this.removeAttribute('readonly')">
       </div>
     </div>
 
-    <div class="input-group">
-      <label class="input-label">Passphrase</label>
+    <div class="input-group" id="groupPass">
+      <label class="input-label" data-i18n="login.passphrase">Passphrase</label>
       <div class="input-wrapper">
-        <input type="password" id="loginPass" placeholder="••••••••••••••••" autocomplete="off" spellcheck="false">
+        <input type="password" id="loginPass"
+          placeholder="Enter your passphrase"
+          autocomplete="new-password" autocorrect="off" autocapitalize="off"
+          spellcheck="false" name="op_field_2" data-form-type="other"
+          readonly onfocus="this.removeAttribute('readonly')">
       </div>
     </div>
 
-    <button type="submit" class="btn-primary" id="loginBtn">Authenticate →</button>
+    <button type="submit" class="btn-primary" id="loginBtn">
+      <span data-i18n="login.authenticate">Authenticate</span>
+      <span>→</span>
+    </button>
   </form>
 
-  <div id="loginMsg" class="message-area">◈ Awaiting credentials</div>
+  <div id="loginMsg" class="message-area">
+    <span data-i18n="login.awaiting">◈ Awaiting credentials</span>
+  </div>
 </div>
+
+<div class="success-flash" id="successFlash"></div>
+
+<script src="lang.js"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -513,6 +612,120 @@ const ADMIN_USER = "Devil-0";
 
 function email(id){ return id.toLowerCase() + "@abyss.local"; }
 
+/* ============ MATRIX RAIN ============ */
+const mc = document.getElementById('matrixCanvas');
+const mctx = mc.getContext('2d');
+let mcWidth, mcHeight, matrixCols, matrixDrops;
+const matrixFontSize = 16;
+const matrixChars = 'アカサタナハマヤラワ0123456789ABCDEFｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉ';
+
+function initMatrix(){
+  mcWidth = mc.width = innerWidth;
+  mcHeight = mc.height = innerHeight;
+  matrixCols = Math.floor(mcWidth / matrixFontSize);
+  matrixDrops = new Array(matrixCols).fill(1);
+}
+initMatrix();
+
+let resizeTimer;
+addEventListener('resize', function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(initMatrix, 200);
+});
+
+let lastMatrixTime = 0;
+const MATRIX_INTERVAL = 1000 / 30;
+
+function drawMatrix(now){
+  requestAnimationFrame(drawMatrix);
+  if (document.hidden) return;
+  if (now - lastMatrixTime < MATRIX_INTERVAL) return;
+  lastMatrixTime = now;
+
+  mctx.fillStyle = 'rgba(3, 3, 8, 0.08)';
+  mctx.fillRect(0, 0, mcWidth, mcHeight);
+  mctx.font = matrixFontSize + 'px JetBrains Mono, monospace';
+
+  const theme = window.AbyssTheme ? window.AbyssTheme.get() : 'abyss';
+  const primaryColors = {
+    abyss: '#ff1e3c',
+    matrix: '#00ff41',
+    ice: '#00c8ff',
+    void: '#b400ff',
+    stealth: '#a0a0a0'
+  };
+  const color = primaryColors[theme] || '#ff1e3c';
+
+  for (let i = 0; i < matrixDrops.length; i++){
+    const text = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+    const x = i * matrixFontSize;
+    const y = matrixDrops[i] * matrixFontSize;
+
+    if (Math.random() > 0.985){
+      mctx.fillStyle = '#ffffff';
+      mctx.shadowBlur = 15;
+      mctx.shadowColor = color;
+    } else {
+      mctx.fillStyle = color;
+      mctx.shadowBlur = 0;
+    }
+
+    mctx.fillText(text, x, y);
+
+    if (y > mcHeight && Math.random() > 0.975) matrixDrops[i] = 0;
+    matrixDrops[i]++;
+  }
+  mctx.shadowBlur = 0;
+}
+requestAnimationFrame(drawMatrix);
+
+/* ============ CLOCK ============ */
+function updateClock(){
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('clock').textContent = h + ':' + m;
+}
+updateClock();
+setInterval(updateClock, 30000);
+
+/* ============ BOOT SEQUENCE ============ */
+const bootLines = [
+  '<span class="path">›</span> initializing kernel... <span class="ok">[OK]</span>',
+  '<span class="path">›</span> loading crypto modules... <span class="ok">[OK]</span>',
+  '<span class="path">›</span> connecting to abyss... <span class="ok">[OK]</span>',
+  '<span class="path">›</span> ready for input<span class="cursor-blink"></span>'
+];
+
+const bootLog = document.getElementById('bootLog');
+let bootIndex = 0;
+
+function bootNext(){
+  if (bootIndex >= bootLines.length) return;
+  const div = document.createElement('div');
+  div.className = 'boot-line';
+  div.innerHTML = bootLines[bootIndex];
+  bootLog.appendChild(div);
+  bootIndex++;
+  setTimeout(bootNext, 300 + Math.random() * 200);
+}
+setTimeout(bootNext, 400);
+
+/* ============ LANGUAGE SWITCH TOP BUTTON ============ */
+document.getElementById('langTopBtn').addEventListener('click', function(){
+  const newLang = window.AbyssLang.getLang() === 'en' ? 'ar' : 'en';
+  window.AbyssLang.setLang(newLang);
+});
+
+/* ============ FOCUS EFFECTS ============ */
+['groupUser', 'groupPass'].forEach(function(id){
+  const group = document.getElementById(id);
+  const input = group.querySelector('input');
+  input.addEventListener('focus', function(){ group.classList.add('focused'); });
+  input.addEventListener('blur', function(){ group.classList.remove('focused'); });
+});
+
+/* ============ STATUS CHECK ============ */
 async function checkStatus(username){
   try {
     const snap = await getDoc(doc(db, 'settings', 'global'));
@@ -526,17 +739,18 @@ async function checkStatus(username){
     }
     return { ok: true };
   } catch(e){
-    console.error('checkStatus error:', e);
     return { ok: true };
   }
 }
 
+/* ============ LOGIN ============ */
 const form = document.getElementById('loginForm');
 const userInput = document.getElementById('loginUser');
 const passInput = document.getElementById('loginPass');
 const btn = document.getElementById('loginBtn');
 const msg = document.getElementById('loginMsg');
 const card = document.getElementById('loginCard');
+const successFlash = document.getElementById('successFlash');
 
 function setMsg(t, type){
   msg.textContent = t;
@@ -544,29 +758,8 @@ function setMsg(t, type){
 }
 function shake(){
   card.classList.add('shake');
-  setTimeout(function(){ card.classList.remove('shake'); }, 500);
+  setTimeout(function(){ card.classList.remove('shake'); }, 550);
 }
-
-/* Matrix BG — أهدأ وأخف */
-const canvas = document.getElementById('matrixCanvas');
-const ctx = canvas.getContext('2d');
-function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
-resize(); addEventListener('resize', resize);
-const chars = 'アカサタナハマヤラワ0123456789';
-const fs = 16;
-const drops = Array(Math.floor(canvas.width / fs)).fill(1);
-setInterval(function(){
-  ctx.fillStyle = 'rgba(0,0,0,0.08)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = '#ff1e3c';
-  ctx.font = fs + 'px JetBrains Mono, monospace';
-  for (var i=0;i<drops.length;i++){
-    var t = chars[Math.floor(Math.random()*chars.length)];
-    ctx.fillText(t, i*fs, drops[i]*fs);
-    if (drops[i]*fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
-    drops[i]++;
-  }
-}, 60);
 
 onAuthStateChanged(auth, async function(user){
   if (user){
@@ -576,12 +769,6 @@ onAuthStateChanged(auth, async function(user){
     if (!status.ok){
       await signOut(auth);
       sessionStorage.removeItem('abyss_user');
-      if (status.reason === 'locked'){
-        setMsg('⛓ ABYSS LOCKED', 'error');
-      } else {
-        setMsg('🚫 Account suspended', 'error');
-      }
-      shake();
       return;
     }
     sessionStorage.setItem('abyss_user', formatted);
@@ -591,12 +778,13 @@ onAuthStateChanged(auth, async function(user){
 
 form.addEventListener('submit', async function(e){
   e.preventDefault();
-  var u = userInput.value.trim();
-  var p = passInput.value;
-  if (!u || !p){ setMsg('⚠ Credentials required', 'error'); shake(); return; }
+  const t = window.AbyssLang.t;
+  const u = userInput.value.trim();
+  const p = passInput.value;
+  if (!u || !p){ setMsg('⚠ ' + t('login.required'), 'error'); shake(); return; }
 
   btn.disabled = true;
-  setMsg('◈ Decrypting...', 'info');
+  setMsg('◈ ' + t('login.decrypting'), 'info');
 
   try {
     await signInWithEmailAndPassword(auth, email(u), p);
@@ -606,28 +794,28 @@ form.addEventListener('submit', async function(e){
     if (!status.ok){
       await signOut(auth);
       sessionStorage.removeItem('abyss_user');
-      if (status.reason === 'locked'){
-        setMsg('⛓ ABYSS LOCKED', 'error');
-      } else {
-        setMsg('🚫 Account suspended', 'error');
-      }
+      if (status.reason === 'locked') setMsg('⛓ ' + t('login.locked'), 'error');
+      else setMsg('🚫 ' + t('login.suspended'), 'error');
       shake();
       btn.disabled = false;
       return;
     }
 
     sessionStorage.setItem('abyss_user', formatted);
-    setMsg('✓ Access granted', 'success');
+    setMsg('✓ ' + t('login.access_granted'), 'success');
+
+    successFlash.classList.add('active');
+    setTimeout(function(){ successFlash.classList.remove('active'); }, 800);
+
     setTimeout(function(){
       window.location.replace('dashboard.html');
-    }, 500);
+    }, 700);
   } catch (err){
     console.error(err);
-    var msgText = '✕ Invalid credentials';
-    if (err.code === 'auth/user-not-found') msgText = '✕ Unknown operator';
-    if (err.code === 'auth/wrong-password') msgText = '✕ Invalid passphrase';
-    if (err.code === 'auth/too-many-requests') msgText = '⚠ Too many attempts — wait';
-    if (err.code === 'auth/invalid-email') msgText = '✕ Invalid operator id';
+    let msgText = '✕ ' + t('login.invalid');
+    if (err.code === 'auth/user-not-found') msgText = '✕ ' + t('login.unknown');
+    if (err.code === 'auth/wrong-password') msgText = '✕ ' + t('login.wrong_pass');
+    if (err.code === 'auth/too-many-requests') msgText = '⚠ ' + t('login.too_many');
     setMsg(msgText, 'error');
     shake();
     btn.disabled = false;
@@ -638,6 +826,13 @@ form.addEventListener('submit', async function(e){
   i.addEventListener('keypress', function(e){
     if (e.key === 'Enter'){ e.preventDefault(); form.dispatchEvent(new Event('submit')); }
   });
+});
+
+/* ============ REACT TO LANGUAGE ============ */
+window.addEventListener('langChanged', function(){
+  // Update placeholders
+  userInput.placeholder = window.AbyssLang.t('login.enter_id');
+  passInput.placeholder = window.AbyssLang.t('login.enter_pass');
 });
 </script>
 </body>
