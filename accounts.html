@@ -4,130 +4,583 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ABYSS · ACCOUNTS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; font-family: 'Courier New', monospace; }
-  body { background: #000; color: #ff6666; min-height: 100vh; overflow-x: hidden; }
-  #matrixCanvas { position: fixed; inset: 0; width: 100%; height: 100%;
-    z-index: 0; opacity: 0.2; pointer-events: none; }
-  body::before { content: ''; position: fixed; inset: 0;
-    background: radial-gradient(circle at center, rgba(255,0,0,0.08) 0%, rgba(0,0,0,0.95) 70%);
-    z-index: 1; pointer-events: none; }
-  #app { position: relative; z-index: 2; padding: 0.8rem; max-width: 900px; margin: 0 auto; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+  html, body { height: 100%; }
 
-  .top-bar { display: flex; align-items: center; justify-content: space-between;
-    padding: 0.7rem 1rem; margin-bottom: 0.8rem;
-    background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
-    border: 1px solid #ff0000; border-radius: 12px;
-    box-shadow: 0 0 20px rgba(255,0,0,0.3); flex-wrap: wrap; gap: 0.5rem; }
-  .top-bar h2 { font-size: 0.9rem; letter-spacing: 3px; color: #ff1a1a;
-    text-transform: uppercase; text-shadow: 0 0 10px #ff0000; }
-  .back-btn, .logout-btn { padding: 0.35rem 0.8rem; border: 1px solid #ff0000;
-    border-radius: 20px; background: transparent; color: #ff6666;
-    cursor: pointer; font-size: 0.7rem; letter-spacing: 2px;
-    text-transform: uppercase; font-family: inherit;
-    transition: all 0.2s; text-decoration: none; }
-  .back-btn:hover, .logout-btn:hover { background: #ff0000;
-    color: #000; box-shadow: 0 0 15px #ff0000; }
+  :root {
+    --bg: #030308;
+    --card: rgba(10, 10, 18, 0.65);
+    --card-solid: rgba(12, 12, 22, 0.92);
+    --border: rgba(255, 30, 60, 0.25);
+    --border-hover: rgba(255, 30, 60, 0.65);
+    --red: #ff1e3c;
+    --red-2: #ff5570;
+    --red-glow: rgba(255, 30, 60, 0.6);
+    --text: #ebebf5;
+    --text-dim: #70707f;
+    --text-mute: #3a3a48;
+    --success: #00ff88;
+  }
 
-  .card { background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
-    border: 1px solid #ff0000; border-radius: 12px;
-    padding: 1.2rem; box-shadow: 0 0 20px rgba(255,0,0,0.2); }
-  .card-title { font-size: 0.8rem; letter-spacing: 3px; color: #ff1a1a;
-    text-transform: uppercase; margin-bottom: 0.8rem;
-    padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,0,0,0.3);
-    display: flex; justify-content: space-between;
-    align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    padding: 1.5rem;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(255, 30, 60, 0.12) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(150, 0, 255, 0.08) 0%, transparent 45%);
+  }
 
-  .user-list { display: flex; flex-direction: column; gap: 0.5rem; }
-  .user-row { display: flex; align-items: center; gap: 0.6rem;
-    padding: 0.8rem 1rem; background: rgba(0,0,0,0.5);
-    border: 1px solid #ff0000; border-radius: 8px; font-size: 0.85rem; }
-  .user-row .u-name { color: #ff1a1a; font-weight: 700;
-    min-width: 100px; letter-spacing: 1px; text-shadow: 0 0 6px rgba(255,0,0,0.5); }
-  .user-row .u-real { flex: 1; color: #ffcccc; font-size: 0.85rem; }
-  .user-row .u-real.empty { color: #661111; font-style: italic; }
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255, 30, 60, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 30, 60, 0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    opacity: 0.8;
+  }
 
-  .user-row .u-edit { padding: 0.3rem 0.7rem; font-size: 0.65rem;
-    background: transparent; border: 1px solid #ff0000; color: #ff6666;
-    border-radius: 4px; cursor: pointer; font-family: inherit;
-    letter-spacing: 1px; transition: all 0.2s; }
-  .user-row .u-edit:hover { background: #ff0000; color: #000; }
-  .user-row .u-edit:disabled { opacity: 0.3; cursor: not-allowed; }
+  #matrixCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.3;
+  }
 
-  .empty-msg { text-align: center; color: #661111;
-    padding: 2rem; font-size: 0.8rem; letter-spacing: 1px; }
+  #app {
+    position: relative;
+    z-index: 10;
+    max-width: 900px;
+    margin: 0 auto;
+  }
 
-  .info-badge { padding: 0.3rem 0.7rem; border: 1px solid #4d0000;
-    border-radius: 20px; background: rgba(0,0,0,0.5);
-    color: #661111; font-size: 0.6rem; letter-spacing: 2px;
-    text-transform: uppercase; }
+  /* ============ TOP BAR ============ */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--card);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px -20px rgba(255, 30, 60, 0.3);
+    flex-wrap: wrap;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
+  }
 
-  .modal-bg { display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.9); z-index: 200;
-    align-items: center; justify-content: center; padding: 1rem; }
+  .top-bar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    animation: topLine 5s linear infinite;
+  }
+  @keyframes topLine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .top-bar-left, .top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .top-bar h2 {
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text);
+    text-shadow: 0 0 15px var(--red-glow);
+  }
+
+  .back-btn, .logout-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .back-btn:hover, .logout-btn:hover {
+    background: var(--red);
+    color: #000;
+    border-color: var(--red);
+  }
+
+  .user-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: rgba(255, 30, 60, 0.08);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .user-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 8px var(--red);
+  }
+
+  .user-badge.admin {
+    background: rgba(255, 30, 60, 0.2);
+    border-color: var(--red);
+  }
+
+  .user-badge.admin::before {
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+  }
+
+  /* ============ CARD ============ */
+  .card {
+    background: var(--card);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 20px 60px -20px rgba(255, 30, 60, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--red);
+    font-weight: 700;
+    padding-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(255, 30, 60, 0.15);
+    flex-wrap: wrap;
+  }
+
+  .count-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.3rem 0.75rem;
+    background: rgba(255, 30, 60, 0.08);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 1.5px;
+    font-weight: 400;
+    text-transform: none;
+  }
+
+  /* ============ USER LIST ============ */
+  .user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .user-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: rgba(5, 5, 12, 0.5);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all 0.25s;
+    flex-wrap: wrap;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .user-row::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 0;
+    background: var(--red);
+    transition: height 0.3s;
+  }
+
+  .user-row:hover::before { height: 100%; }
+
+  .user-row:hover {
+    border-color: var(--border-hover);
+    background: rgba(255, 30, 60, 0.04);
+    box-shadow: 0 0 25px rgba(255, 30, 60, 0.15);
+  }
+
+  .user-row.owner {
+    border-color: var(--red);
+    background: rgba(255, 30, 60, 0.06);
+    box-shadow: 0 0 25px rgba(255, 30, 60, 0.2);
+  }
+
+  .user-row.owner::before {
+    background: var(--success);
+  }
+
+  .user-avatar {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, rgba(255, 30, 60, 0.15), rgba(255, 30, 60, 0.05));
+    border: 1px solid var(--border);
+    color: var(--red);
+    flex-shrink: 0;
+    text-shadow: 0 0 10px var(--red-glow);
+  }
+
+  .user-row.owner .user-avatar {
+    border-color: var(--success);
+    color: var(--success);
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 255, 136, 0.05));
+  }
+
+  .user-details {
+    flex: 1;
+    min-width: 150px;
+  }
+
+  .user-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--red);
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .user-row.owner .user-name {
+    color: var(--success);
+  }
+
+  .user-name .crown {
+    font-size: 0.85rem;
+    filter: drop-shadow(0 0 5px var(--success));
+  }
+
+  .user-real {
+    font-size: 0.82rem;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+
+  .user-real.empty {
+    color: var(--text-mute);
+    font-style: italic;
+  }
+
+  .user-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .user-edit {
+    padding: 0.5rem 1.1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .user-edit:hover {
+    background: var(--red);
+    color: #fff;
+    border-color: var(--red);
+    box-shadow: 0 0 20px rgba(255, 30, 60, 0.5);
+  }
+
+  .user-edit.locked {
+    color: var(--text-mute);
+    border-color: rgba(255, 30, 60, 0.1);
+    cursor: not-allowed;
+  }
+
+  .user-edit.locked:hover {
+    background: transparent;
+    color: var(--text-mute);
+    border-color: rgba(255, 30, 60, 0.1);
+    box-shadow: none;
+  }
+
+  .empty-msg {
+    text-align: center;
+    color: var(--text-mute);
+    padding: 3rem 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ============ MODAL ============ */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
   .modal-bg.active { display: flex; }
-  .modal { background: rgba(10,0,0,0.95); border: 1px solid #ff0000;
-    border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 420px;
-    box-shadow: 0 0 40px rgba(255,0,0,0.6); }
-  .modal h3 { color: #ff1a1a; letter-spacing: 3px;
-    text-transform: uppercase; font-size: 0.9rem;
-    margin-bottom: 1rem; text-align: center; }
-  .modal label { display: block; font-size: 0.65rem; color: #ff6666;
-    margin-bottom: 0.4rem; letter-spacing: 2px;
-    text-transform: uppercase; margin-top: 0.8rem; }
-  .modal input { width: 100%; padding: 0.8rem;
-    background: rgba(0,0,0,0.7); border: 1px solid #4d0000;
-    border-radius: 8px; color: #ffcccc; font-family: inherit;
-    outline: none; font-size: 0.9rem; }
-  .modal input:focus { border-color: #ff0000;
-    box-shadow: 0 0 10px rgba(255,0,0,0.5); }
-  .modal-btns { display: flex; gap: 0.5rem; margin-top: 1.2rem; }
-  .modal-btns button { flex: 1; padding: 0.8rem; border-radius: 8px;
-    cursor: pointer; font-family: inherit; letter-spacing: 1px;
-    font-size: 0.8rem; text-transform: uppercase; transition: all 0.2s; }
-  .modal-btns .ok { background: #8b0000; color: #fff;
-    border: 1px solid #ff0000; }
-  .modal-btns .ok:hover { background: #ff0000; }
-  .modal-btns .cancel { background: transparent; color: #ff6666;
-    border: 1px solid #4d0000; }
-  .modal-btns .cancel:hover { border-color: #ff0000; }
 
-  #toast { position: fixed; top: 1rem; left: 50%;
+  .modal {
+    width: 100%;
+    max-width: 440px;
+    background: var(--card-solid);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset, 0 32px 80px -20px rgba(255, 30, 60, 0.4);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .modal::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+  }
+
+  .modal h3 {
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--red);
+    text-align: center;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 0 15px var(--red-glow);
+  }
+
+  .modal label {
+    display: block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 0.4rem;
+    margin-top: 1rem;
+  }
+
+  .modal label::before {
+    content: '› ';
+    color: var(--red);
+    font-weight: 700;
+  }
+
+  .modal input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    background: rgba(5, 5, 12, 0.6);
+    border: 1px solid rgba(255, 30, 60, 0.2);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .modal input:focus {
+    border-color: var(--border-hover);
+    box-shadow: 0 0 0 3px rgba(255, 30, 60, 0.08);
+  }
+
+  .modal input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .modal input::placeholder {
+    color: var(--text-mute);
+    font-weight: 300;
+  }
+
+  .modal-btns {
+    display: flex;
+    gap: 0.65rem;
+    margin-top: 1.75rem;
+  }
+
+  .modal-btns button {
+    flex: 1;
+    padding: 0.85rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .modal-btns .ok {
+    background: linear-gradient(135deg, #ff1e3c 0%, #cc0022 100%);
+    color: #fff;
+    border: 1px solid var(--red);
+    box-shadow: 0 4px 20px rgba(255, 30, 60, 0.4);
+  }
+  .modal-btns .ok:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(255, 30, 60, 0.6);
+  }
+  .modal-btns .ok:disabled {
+    opacity: 0.5;
+    cursor: wait;
+    transform: none;
+  }
+
+  .modal-btns .cancel {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .modal-btns .cancel:hover {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  /* ============ TOAST ============ */
+  #toast {
+    position: fixed;
+    top: 1.5rem;
+    left: 50%;
     transform: translateX(-50%) translateY(-100px);
-    padding: 0.8rem 1.5rem; background: rgba(10,0,0,0.95);
-    border: 1px solid #ff0000; border-radius: 8px;
-    color: #ffcccc; font-size: 0.85rem; letter-spacing: 1px;
-    z-index: 500; transition: transform 0.3s;
-    box-shadow: 0 0 20px rgba(255,0,0,0.6); }
+    padding: 0.9rem 1.75rem;
+    background: var(--card-solid);
+    border: 1px solid var(--red);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    z-index: 500;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 30px rgba(255, 30, 60, 0.5);
+  }
   #toast.show { transform: translateX(-50%) translateY(0); }
-  #toast.success { border-color: #00ff44; color: #00ff88;
-    box-shadow: 0 0 20px rgba(0,255,68,0.6); }
-  #toast.error { border-color: #ff0000; color: #ff4444; }
+  #toast.success {
+    border-color: var(--success);
+    color: var(--success);
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+  }
+  #toast.error {
+    border-color: var(--red);
+    color: var(--red);
+    box-shadow: 0 0 30px rgba(255, 30, 60, 0.5);
+  }
+
+  /* ============ MOBILE ============ */
+  @media (max-width: 640px) {
+    body { padding: 1rem; }
+    .top-bar { padding: 0.85rem 1rem; }
+    .top-bar h2 { font-size: 0.8rem; letter-spacing: 3px; }
+    .user-row { flex-direction: column; align-items: stretch; gap: 0.85rem; }
+    .user-avatar { width: 38px; height: 38px; font-size: 1rem; }
+    .user-actions { justify-content: flex-end; }
+    .user-edit { width: 100%; text-align: center; }
+  }
 </style>
 </head>
 <body>
+
+<div class="bg-layer"></div>
 <canvas id="matrixCanvas"></canvas>
 
-<div id="app" style="display:none;">
+<div id="app">
   <div class="top-bar">
-    <div style="display:flex;gap:0.5rem;align-items:center;">
+    <div class="top-bar-left">
       <a class="back-btn" href="dashboard.html">← Back</a>
       <h2>◈ Account Registry</h2>
     </div>
-    <div style="display:flex;gap:0.5rem;align-items:center;">
-      <span id="userBadge" style="padding:0.35rem 0.8rem;border:1px solid #ff0000;border-radius:20px;
-        background:rgba(255,0,0,0.1);color:#ff6666;font-size:0.7rem;letter-spacing:2px;"></span>
+    <div class="top-bar-right">
+      <span class="user-badge" id="userBadge">—</span>
       <button class="logout-btn" id="logoutBtn">⏻ Exit</button>
     </div>
   </div>
 
   <div class="card">
     <div class="card-title">
-      👤 Operators Registry
-      <span class="info-badge" id="accCount">0 operators</span>
+      <span>👤 Operators</span>
+      <span class="count-badge" id="countBadge">0 accounts</span>
     </div>
     <div class="user-list" id="userList">
-      <div class="empty-msg">◈ loading operators... ◈</div>
+      <div class="empty-msg">◈ Loading operators... ◈</div>
     </div>
   </div>
 </div>
@@ -162,28 +615,55 @@ const db = getFirestore(app);
 
 const ADMIN_USER = "Devil-0";
 
-/* ---------- Matrix BG ---------- */
-const canvas = document.getElementById('matrixCanvas');
-const ctx = canvas.getContext('2d');
-function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
-resize(); addEventListener('resize', resize);
-const chars = 'アカサタナハマヤラワ0123456789ABCDEF';
-const fs = 14;
-const drops = Array(Math.floor(canvas.width / fs)).fill(1);
-setInterval(function(){
-  ctx.fillStyle = 'rgba(0,0,0,0.06)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = '#ff0000';
-  ctx.font = fs + 'px monospace';
-  for (let i=0;i<drops.length;i++){
-    const t = chars[Math.floor(Math.random()*chars.length)];
-    ctx.fillText(t, i*fs, drops[i]*fs);
-    if (drops[i]*fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
-    drops[i]++;
-  }
-}, 50);
+/* ============ MATRIX RAIN (30 FPS) ============ */
+const mc = document.getElementById('matrixCanvas');
+const mctx = mc.getContext('2d');
+let mcWidth, mcHeight, matrixCols, matrixDrops;
+const matrixFontSize = 16;
+const matrixChars = 'アカサタナハマヤラワ0123456789ABCDEF';
 
-/* ---------- Toast ---------- */
+function initMatrix(){
+  mcWidth = mc.width = innerWidth;
+  mcHeight = mc.height = innerHeight;
+  matrixCols = Math.floor(mcWidth / matrixFontSize);
+  matrixDrops = new Array(matrixCols).fill(1);
+}
+initMatrix();
+
+let resizeTimer;
+addEventListener('resize', function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(initMatrix, 200);
+});
+
+let lastMatrixTime = 0;
+const MATRIX_INTERVAL = 1000 / 30;
+
+function drawMatrix(now){
+  requestAnimationFrame(drawMatrix);
+  if (document.hidden) return;
+  if (now - lastMatrixTime < MATRIX_INTERVAL) return;
+  lastMatrixTime = now;
+
+  mctx.fillStyle = 'rgba(3, 3, 8, 0.08)';
+  mctx.fillRect(0, 0, mcWidth, mcHeight);
+  mctx.font = matrixFontSize + 'px JetBrains Mono, monospace';
+
+  for (let i = 0; i < matrixDrops.length; i++){
+    const text = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+    const x = i * matrixFontSize;
+    const y = matrixDrops[i] * matrixFontSize;
+
+    mctx.fillStyle = Math.random() > 0.985 ? '#ffffff' : '#ff1e3c';
+    mctx.fillText(text, x, y);
+
+    if (y > mcHeight && Math.random() > 0.975) matrixDrops[i] = 0;
+    matrixDrops[i]++;
+  }
+}
+requestAnimationFrame(drawMatrix);
+
+/* ============ TOAST ============ */
 const toast = document.getElementById('toast');
 let toastTimer;
 function showToast(msg, type){
@@ -193,7 +673,7 @@ function showToast(msg, type){
   toastTimer = setTimeout(function(){ toast.className = (type || ''); }, 2500);
 }
 
-/* ---------- Auth check ---------- */
+/* ============ AUTH ============ */
 let currentUser = null;
 let isAdmin = false;
 
@@ -202,24 +682,29 @@ onAuthStateChanged(auth, async function(user){
     window.location.replace('index.html');
     return;
   }
-  const stored = sessionStorage.getItem('abyss_user');
-  currentUser = stored || user.email.split('@')[0];
-  isAdmin = (currentUser === ADMIN_USER);
 
-  document.getElementById('userBadge').textContent = currentUser + (isAdmin ? ' ★' : '');
-  document.getElementById('app').style.display = 'block';
+  let stored = sessionStorage.getItem('abyss_user');
+  if (!stored && user.email){
+    const emailUser = user.email.split('@')[0];
+    stored = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
+  }
+  currentUser = stored || 'unknown';
+  isAdmin = (currentUser.toLowerCase() === ADMIN_USER.toLowerCase());
+
+  const badge = document.getElementById('userBadge');
+  badge.textContent = currentUser + (isAdmin ? ' ★' : '');
+  if (isAdmin) badge.classList.add('admin');
 
   await refreshAll();
 });
 
-/* ---------- Logout ---------- */
 document.getElementById('logoutBtn').addEventListener('click', async function(){
   sessionStorage.removeItem('abyss_user');
   await signOut(auth);
   window.location.replace('index.html');
 });
 
-/* ---------- Load all accounts ---------- */
+/* ============ REFRESH ============ */
 async function refreshAll(){
   try {
     const snap = await getDocs(collection(db, 'accounts'));
@@ -238,58 +723,86 @@ async function refreshAll(){
 
     // Sort: Devil-0 first, then by number
     accounts.sort(function(a, b){
-      if (a.username === ADMIN_USER) return -1;
-      if (b.username === ADMIN_USER) return 1;
+      if (a.username.toLowerCase() === ADMIN_USER.toLowerCase()) return -1;
+      if (b.username.toLowerCase() === ADMIN_USER.toLowerCase()) return 1;
       return a.username.localeCompare(b.username);
     });
 
-    document.getElementById('accCount').textContent =
-      accounts.length + ' operator' + (accounts.length === 1 ? '' : 's');
+    document.getElementById('countBadge').textContent =
+      accounts.length + ' account' + (accounts.length === 1 ? '' : 's');
 
     if (!accounts.length){
-      userList.innerHTML = '<div class="empty-msg">◈ no operators found ◈</div>';
+      userList.innerHTML = '<div class="empty-msg">◈ No operators found ◈</div>';
       return;
     }
 
     accounts.forEach(function(acc){
+      const isOwner = acc.username.toLowerCase() === ADMIN_USER.toLowerCase();
+
       const row = document.createElement('div');
       row.className = 'user-row';
-      if (acc.username === ADMIN_USER){
-        row.style.borderColor = '#ff0000';
-        row.style.boxShadow = '0 0 15px rgba(255,0,0,0.5)';
-      }
+      if (isOwner) row.classList.add('owner');
+
+      // Avatar with first letter
+      const avatar = document.createElement('div');
+      avatar.className = 'user-avatar';
+      avatar.textContent = acc.username.charAt(0).toUpperCase();
+
+      // Details
+      const details = document.createElement('div');
+      details.className = 'user-details';
 
       const nameEl = document.createElement('div');
-      nameEl.className = 'u-name';
-      nameEl.textContent = acc.username + (acc.username === ADMIN_USER ? ' ★' : '');
+      nameEl.className = 'user-name';
+      nameEl.innerHTML = escapeHtml(acc.username) +
+        (isOwner ? '<span class="crown">★</span>' : '');
 
       const realEl = document.createElement('div');
-      realEl.className = 'u-real' + (acc.realName ? '' : ' empty');
+      realEl.className = 'user-real' + (acc.realName ? '' : ' empty');
       realEl.textContent = acc.realName || '(no name set)';
 
+      details.appendChild(nameEl);
+      details.appendChild(realEl);
+
+      // Actions
+      const actions = document.createElement('div');
+      actions.className = 'user-actions';
+
       const editBtn = document.createElement('button');
-      editBtn.className = 'u-edit';
-      editBtn.textContent = isAdmin ? (acc.realName ? '✎ EDIT' : '✎ SET') : '🔒 VIEW';
-      editBtn.disabled = !isAdmin;
+      editBtn.className = 'user-edit';
+
       if (isAdmin){
+        editBtn.textContent = acc.realName ? '✎ Edit' : '✎ Set';
         editBtn.addEventListener('click', function(){
           openEditModal(acc);
         });
+      } else {
+        editBtn.textContent = '🔒 View';
+        editBtn.classList.add('locked');
+        editBtn.disabled = true;
       }
 
-      row.appendChild(nameEl);
-      row.appendChild(realEl);
-      row.appendChild(editBtn);
+      actions.appendChild(editBtn);
+
+      row.appendChild(avatar);
+      row.appendChild(details);
+      row.appendChild(actions);
       userList.appendChild(row);
     });
   } catch (e){
     console.error(e);
     document.getElementById('userList').innerHTML =
-      '<div class="empty-msg">⚠ failed to load operators</div>';
+      '<div class="empty-msg">⚠ Failed to load operators</div>';
   }
 }
 
-/* ---------- Modal ---------- */
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+
+/* ============ MODAL ============ */
 const modalBg = document.getElementById('modalBg');
 const modalContent = document.getElementById('modalContent');
 
@@ -309,27 +822,31 @@ function openEditModal(acc){
   openModal(
     '<h3>✎ Set Real Name</h3>' +
     '<label>Operator</label>' +
-    '<input type="text" value="' + acc.username + '" disabled ' +
-      'style="opacity:0.6;cursor:not-allowed;">' +
+    '<input type="text" value="' + escapeHtml(acc.username) + '" disabled>' +
     '<label>Real Name</label>' +
     '<input type="text" id="realNameInput" placeholder="e.g. محمد" ' +
-      'value="' + escapeHtml(acc.realName) + '" autocomplete="off" maxlength="30">' +
+      'value="' + escapeHtml(acc.realName) + '" autocomplete="off" maxlength="30" spellcheck="false">' +
     '<div class="modal-btns">' +
     '<button class="cancel" id="mxCancel">Cancel</button>' +
-    '<button class="ok" id="mxSave">Save</button>' +
+    '<button class="ok" id="mxSave">💾 Save</button>' +
     '</div>'
   );
 
   document.getElementById('mxCancel').addEventListener('click', closeModal);
   document.getElementById('mxSave').addEventListener('click', async function(){
+    const btn = this;
     const newName = document.getElementById('realNameInput').value.trim();
+
+    btn.disabled = true;
+    btn.textContent = '◈ Saving...';
+
     await saveRealName(acc.id, newName);
+
     closeModal();
     await refreshAll();
-    showToast('✓ name updated for ' + acc.username, 'success');
+    showToast('✓ Name updated for ' + acc.username, 'success');
   });
 
-  // Focus input
   setTimeout(function(){
     const inp = document.getElementById('realNameInput');
     if (inp) inp.focus();
@@ -351,14 +868,8 @@ async function saveRealName(accountId, name){
     }
   } catch (e){
     console.error(e);
-    showToast('failed: ' + e.message, 'error');
+    showToast('Failed: ' + e.message, 'error');
   }
-}
-
-function escapeHtml(s){
-  return String(s || '').replace(/[&<>"']/g, function(c){
-    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
-  });
 }
 </script>
 </body>
