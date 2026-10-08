@@ -12,7 +12,8 @@
   body::before { content: ''; position: fixed; inset: 0;
     background: radial-gradient(circle at center, rgba(255,0,0,0.08) 0%, rgba(0,0,0,0.95) 70%);
     z-index: 1; pointer-events: none; }
-  #app { position: relative; z-index: 2; padding: 0.8rem; max-width: 1100px; margin: 0 auto; }
+  #app { position: relative; z-index: 2; padding: 0.8rem;
+    max-width: 1100px; margin: 0 auto; }
 
   .top-bar { display: flex; align-items: center; justify-content: space-between;
     padding: 0.7rem 1rem; margin-bottom: 0.8rem;
@@ -29,16 +30,67 @@
   .back-btn:hover, .logout-btn:hover { background: #ff0000;
     color: #000; box-shadow: 0 0 15px #ff0000; }
 
+  /* ============ GATE ============ */
+  #gateView { position: fixed; inset: 0; z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1rem; }
+  #gateView.hidden { display: none; }
+  .gate-card { background: rgba(10,0,0,0.9); backdrop-filter: blur(15px);
+    border: 1px solid #ff0000; border-radius: 20px;
+    padding: 2rem 1.5rem; width: 100%; max-width: 400px; text-align: center;
+    box-shadow: 0 0 40px rgba(255,0,0,0.5);
+    animation: cardFloat 4s ease-in-out infinite; }
+  @keyframes cardFloat {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); box-shadow: 0 0 60px rgba(255,0,0,0.8); }
+  }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}20%{transform:translateX(-12px)}
+    40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)} }
+  .shake { animation: shake 0.5s ease-in-out; }
+
+  .gate-icon { font-size: 3rem; margin-bottom: 1rem;
+    display: block; text-shadow: 0 0 20px #ff0000; }
+  .gate-title { font-size: 1rem; letter-spacing: 4px; color: #ff1a1a;
+    text-transform: uppercase; margin-bottom: 0.5rem;
+    text-shadow: 0 0 10px #ff0000; }
+  .gate-sub { font-size: 0.7rem; color: #661111; letter-spacing: 2px;
+    margin-bottom: 1.5rem; text-transform: uppercase; }
+  .gate-input { width: 100%; padding: 1rem; background: rgba(0,0,0,0.8);
+    border: 1px solid #4d0000; border-radius: 8px;
+    color: #ffcccc; font-family: inherit; outline: none;
+    font-size: 1.5rem; text-align: center; letter-spacing: 8px;
+    margin-bottom: 1rem; transition: all 0.3s; }
+  .gate-input:focus { border-color: #ff0000;
+    box-shadow: 0 0 20px rgba(255,0,0,0.6); }
+  .gate-btn { width: 100%; padding: 0.9rem; font-size: 0.9rem;
+    font-weight: 700; border: none; border-radius: 8px;
+    background: linear-gradient(135deg, #8b0000, #ff0000, #8b0000);
+    background-size: 200% 200%; color: white; cursor: pointer;
+    letter-spacing: 3px; text-transform: uppercase;
+    box-shadow: 0 0 20px rgba(255,0,0,0.6);
+    transition: all 0.3s;
+    animation: gradientShift 3s ease infinite;
+    font-family: inherit; }
+  @keyframes gradientShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+  .gate-btn:hover { box-shadow: 0 0 40px rgba(255,0,0,1); }
+  .gate-btn:disabled { opacity: 0.5; cursor: wait; }
+  .gate-msg { margin-top: 1rem; font-size: 0.75rem;
+    min-height: 1.5rem; color: #ff6666; letter-spacing: 1px; }
+
+  /* ============ COMMAND VIEW ============ */
   .card { background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
     border: 1px solid #ff0000; border-radius: 12px;
-    padding: 1.2rem; box-shadow: 0 0 20px rgba(255,0,0,0.2); margin-bottom: 0.8rem; }
+    padding: 1.2rem; box-shadow: 0 0 20px rgba(255,0,0,0.2);
+    margin-bottom: 0.8rem; }
   .card-title { font-size: 0.8rem; letter-spacing: 3px; color: #ff1a1a;
     text-transform: uppercase; margin-bottom: 0.8rem;
     padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,0,0,0.3);
     display: flex; align-items: center; gap: 0.5rem; }
 
   .cmd-grid { display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.7rem; }
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.7rem; }
   .cmd-btn { padding: 1rem; background: rgba(0,0,0,0.6);
     border: 1px solid #ff0000; border-radius: 10px;
     color: #ff6666; cursor: pointer; font-family: inherit;
@@ -58,24 +110,27 @@
     box-shadow: 0 0 30px #00ff44; }
 
   .status-pill { display: inline-flex; align-items: center; gap: 0.4rem;
-    padding: 0.3rem 0.7rem; border: 1px solid #ff0000; border-radius: 20px;
-    background: rgba(0,0,0,0.5); color: #ff6666; font-size: 0.65rem;
-    letter-spacing: 2px; text-transform: uppercase; margin-left: auto; }
+    padding: 0.3rem 0.7rem; border: 1px solid #ff0000;
+    border-radius: 20px; background: rgba(0,0,0,0.5);
+    color: #ff6666; font-size: 0.65rem; letter-spacing: 2px;
+    text-transform: uppercase; margin-left: auto; }
   .status-pill.locked { border-color: #ff1a1a; color: #ff1a1a;
-    box-shadow: 0 0 15px rgba(255,0,0,0.6); animation: pulsePts 1.5s infinite; }
+    box-shadow: 0 0 15px rgba(255,0,0,0.6);
+    animation: pulsePts 1.5s infinite; }
   @keyframes pulsePts { 0%,100%{opacity:1} 50%{opacity:0.5} }
 
   .user-list { display: flex; flex-direction: column; gap: 0.4rem; }
   .user-row { display: flex; align-items: center; gap: 0.6rem;
     padding: 0.6rem 0.9rem; background: rgba(0,0,0,0.5);
-    border: 1px solid #ff0000; border-radius: 8px; font-size: 0.8rem; }
+    border: 1px solid #ff0000; border-radius: 8px;
+    font-size: 0.8rem; }
   .user-row .u-name { color: #ff1a1a; font-weight: 700;
     min-width: 100px; letter-spacing: 1px; }
   .user-row .u-real { flex: 1; color: #ffcccc; font-size: 0.75rem; }
   .user-row .u-kick { padding: 0.3rem 0.7rem; font-size: 0.65rem;
-    background: transparent; border: 1px solid #ff0000; color: #ff6666;
-    border-radius: 4px; cursor: pointer; font-family: inherit;
-    letter-spacing: 1px; }
+    background: transparent; border: 1px solid #ff0000;
+    color: #ff6666; border-radius: 4px; cursor: pointer;
+    font-family: inherit; letter-spacing: 1px; }
   .user-row .u-kick:hover { background: #ff0000; color: #000; }
   .user-row.kicked { border-color: #00ff44; }
   .user-row.kicked .u-kick { border-color: #00ff44; color: #00ff88; }
@@ -86,19 +141,18 @@
     align-items: center; justify-content: center; padding: 1rem; }
   .modal-bg.active { display: flex; }
   .modal { background: rgba(10,0,0,0.95); border: 1px solid #ff0000;
-    border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 420px;
-    box-shadow: 0 0 40px rgba(255,0,0,0.6); }
+    border-radius: 12px; padding: 1.5rem; width: 100%;
+    max-width: 420px; box-shadow: 0 0 40px rgba(255,0,0,0.6); }
   .modal h3 { color: #ff1a1a; letter-spacing: 3px;
     text-transform: uppercase; font-size: 0.9rem;
     margin-bottom: 1rem; text-align: center; }
   .modal label { display: block; font-size: 0.65rem; color: #ff6666;
     margin-bottom: 0.4rem; letter-spacing: 2px;
     text-transform: uppercase; margin-top: 0.8rem; }
-  .modal input, .modal textarea, .modal select { width: 100%;
-    padding: 0.8rem; background: rgba(0,0,0,0.7);
-    border: 1px solid #4d0000; border-radius: 8px;
-    color: #ffcccc; font-family: inherit; outline: none;
-    font-size: 0.85rem; }
+  .modal input, .modal select { width: 100%; padding: 0.8rem;
+    background: rgba(0,0,0,0.7); border: 1px solid #4d0000;
+    border-radius: 8px; color: #ffcccc; font-family: inherit;
+    outline: none; font-size: 0.85rem; }
   .modal input:focus, .modal select:focus { border-color: #ff0000;
     box-shadow: 0 0 10px rgba(255,0,0,0.5); }
   .modal-btns { display: flex; gap: 0.5rem; margin-top: 1.2rem; }
@@ -128,6 +182,21 @@
 <body>
 <canvas id="matrixCanvas"></canvas>
 
+<!-- GATE -->
+<div id="gateView">
+  <div class="gate-card" id="gateCard">
+    <span class="gate-icon">🔒</span>
+    <div class="gate-title">RESTRICTED</div>
+    <div class="gate-sub">enter command code</div>
+    <input type="password" id="gateInput" class="gate-input"
+      placeholder="••••" maxlength="8" autocomplete="off"
+      inputmode="numeric">
+    <button class="gate-btn" id="gateBtn" type="button">▸ Unlock</button>
+    <div class="gate-msg" id="gateMsg"></div>
+  </div>
+</div>
+
+<!-- COMMAND VIEW -->
 <div id="app" style="display:none;">
   <div class="top-bar">
     <div style="display:flex;gap:0.5rem;align-items:center;">
@@ -149,7 +218,7 @@
       </button>
       <button class="cmd-btn danger" id="cmdLockAbyss">
         <span class="ico">⛓</span>
-        <span class="txt">Lock The Abyss<small>kick everyone (except you)</small></span>
+        <span class="txt">Lock The Abyss<small>kick everyone (except Devil-0)</small></span>
       </button>
       <button class="cmd-btn success" id="cmdUnlockAbyss">
         <span class="ico">🔓</span>
@@ -184,7 +253,7 @@ import { getAuth, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import {
   getFirestore, collection, getDocs, deleteDoc, doc,
-  setDoc, getDoc, addDoc, query, orderBy, limit
+  setDoc, getDoc
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -201,6 +270,12 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const ADMIN_USER = "Devil-0";
+
+/* ============================================================
+   🔑 رمز الدخول للأدمن — 2133
+   أي شخص يعرفه يقدر يدخل قسم الأوامر
+   ============================================================ */
+const SECRET_CODE = "2133";
 
 /* ---------- Matrix BG ---------- */
 const canvas = document.getElementById('matrixCanvas');
@@ -233,34 +308,94 @@ function showToast(msg, type){
   toastTimer = setTimeout(function(){ toast.className = (type || ''); }, 2500);
 }
 
-/* ---------- Auth check ---------- */
-onAuthStateChanged(auth, async function(user){
+/* ---------- Auth ---------- */
+let currentUser = null;
+
+onAuthStateChanged(auth, function(user){
   if (!user){
     window.location.replace('index.html');
     return;
   }
-
+  // ✅ خذ المستخدم بالشكل الصحيح
   const stored = sessionStorage.getItem('abyss_user');
-  const username = stored || user.email.split('@')[0];
-
-  if (username !== ADMIN_USER){
-    alert('⛔ ACCESS DENIED — only Devil-0 can access the command center.');
-    window.location.replace('dashboard.html');
-    return;
+  if (stored){
+    currentUser = stored;
+  } else {
+    const emailUser = user.email.split('@')[0];
+    currentUser = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
   }
-
-  document.getElementById('app').style.display = 'block';
-  await refreshAll();
 });
 
-/* ---------- Logout ---------- */
 document.getElementById('logoutBtn').addEventListener('click', async function(){
   sessionStorage.removeItem('abyss_user');
+  sessionStorage.removeItem('abyss_admin_unlocked');
   await signOut(auth);
   window.location.replace('index.html');
 });
 
-/* ---------- Load settings ---------- */
+/* ---------- Gate ---------- */
+const gateView = document.getElementById('gateView');
+const gateCard = document.getElementById('gateCard');
+const gateInput = document.getElementById('gateInput');
+const gateBtn = document.getElementById('gateBtn');
+const gateMsg = document.getElementById('gateMsg');
+const appEl = document.getElementById('app');
+
+function shakeGate(){
+  gateCard.classList.add('shake');
+  setTimeout(function(){ gateCard.classList.remove('shake'); }, 500);
+}
+
+function unlockApp(){
+  gateView.classList.add('hidden');
+  appEl.style.display = 'block';
+  sessionStorage.setItem('abyss_admin_unlocked', 'ok');
+  refreshAll();
+}
+
+function tryUnlock(){
+  const code = gateInput.value.trim();
+  if (!code){
+    gateMsg.style.color = '#ff4444';
+    gateMsg.textContent = '✕ enter the code';
+    shakeGate();
+    return;
+  }
+
+  gateBtn.disabled = true;
+  gateMsg.style.color = '#ff6666';
+  gateMsg.textContent = '◈ verifying...';
+
+  setTimeout(function(){
+    gateBtn.disabled = false;
+
+    if (code === SECRET_CODE){
+      gateMsg.style.color = '#00ff88';
+      gateMsg.textContent = '✓ access granted';
+      setTimeout(unlockApp, 300);
+    } else {
+      gateMsg.style.color = '#ff4444';
+      gateMsg.textContent = '✕ invalid command code';
+      gateInput.value = '';
+      shakeGate();
+      setTimeout(function(){ gateInput.focus(); }, 200);
+    }
+  }, 250);
+}
+
+gateBtn.addEventListener('click', tryUnlock);
+gateInput.addEventListener('keypress', function(e){
+  if (e.key === 'Enter'){ e.preventDefault(); tryUnlock(); }
+});
+
+/* ✅ إذا سبق وفتح الرمز في هذه الجلسة، ادخل مباشرة */
+if (sessionStorage.getItem('abyss_admin_unlocked') === 'ok'){
+  setTimeout(unlockApp, 100);
+} else {
+  setTimeout(function(){ gateInput.focus(); }, 300);
+}
+
+/* ---------- Settings ---------- */
 async function loadSettings(){
   try {
     const snap = await getDoc(doc(db, 'settings', 'global'));
@@ -280,12 +415,14 @@ async function saveSettings(data){
   }
 }
 
-/* ---------- Refresh UI ---------- */
+/* ---------- Refresh ---------- */
+const lockStatus = document.getElementById('lockStatus');
+const userList = document.getElementById('userList');
+
 async function refreshAll(){
   const settings = await loadSettings();
 
-  // lock status
-  const lockStatus = document.getElementById('lockStatus');
+  // Lock status
   if (settings.locked){
     lockStatus.textContent = '⛓ LOCKED';
     lockStatus.classList.add('locked');
@@ -294,15 +431,13 @@ async function refreshAll(){
     lockStatus.classList.remove('locked');
   }
 
-  // users list
+  // Users
   try {
-    const usersSnap = await getDocs(collection(db, 'accounts'));
-    const userList = document.getElementById('userList');
+    const snap = await getDocs(collection(db, 'accounts'));
     userList.innerHTML = '';
-
     const kicked = settings.kicked || [];
 
-    usersSnap.forEach(function(d){
+    snap.forEach(function(d){
       const data = d.data();
       const k = data.username || d.id;
       const isKicked = kicked.indexOf(k) !== -1;
@@ -357,7 +492,7 @@ async function refreshAll(){
       userList.appendChild(row);
     });
 
-    if (!usersSnap.size){
+    if (!snap.size){
       userList.innerHTML = '<div style="text-align:center;color:#661111;padding:1rem;">no operators yet</div>';
     }
   } catch (e){
@@ -381,7 +516,9 @@ modalBg.addEventListener('click', function(e){
   if (e.target === modalBg) closeModal();
 });
 
-/* ---------- COMMAND 1: Wipe chat ---------- */
+/* ---------- COMMANDS ---------- */
+
+// Wipe chat
 document.getElementById('cmdWipeChat').addEventListener('click', function(){
   openModal(
     '<h3>⚠ Wipe Entire Chat</h3>' +
@@ -410,13 +547,12 @@ document.getElementById('cmdWipeChat').addEventListener('click', function(){
   });
 });
 
-/* ---------- COMMAND 2: Lock Abyss ---------- */
+// Lock abyss
 document.getElementById('cmdLockAbyss').addEventListener('click', function(){
   openModal(
     '<h3>⛓ Lock The Abyss</h3>' +
     '<p style="color:#ff6666;font-size:0.8rem;text-align:center;line-height:1.5;">' +
-    'Everyone except <b>Devil-0</b> will be kicked out.<br>' +
-    'They will see: <em>"تم إقفال الهاوية"</em></p>' +
+    'Everyone except <b>Devil-0</b> will be kicked out.</p>' +
     '<div class="modal-btns">' +
     '<button class="cancel" id="mxCancel">Cancel</button>' +
     '<button class="ok" id="confirmLock">⛓ Lock</button>' +
@@ -433,7 +569,7 @@ document.getElementById('cmdLockAbyss').addEventListener('click', function(){
   });
 });
 
-/* ---------- COMMAND 3: Unlock Abyss ---------- */
+// Unlock abyss
 document.getElementById('cmdUnlockAbyss').addEventListener('click', async function(){
   const s = await loadSettings();
   s.locked = false;
@@ -442,14 +578,14 @@ document.getElementById('cmdUnlockAbyss').addEventListener('click', async functi
   showToast('the abyss is now OPEN', 'success');
 });
 
-/* ---------- COMMAND 4: Kick user ---------- */
+// Kick user
 document.getElementById('cmdKickUser').addEventListener('click', async function(){
-  const usersSnap = await getDocs(collection(db, 'accounts'));
+  const snap = await getDocs(collection(db, 'accounts'));
   const settings = await loadSettings();
   const kicked = settings.kicked || [];
 
   const avail = [];
-  usersSnap.forEach(function(d){
+  snap.forEach(function(d){
     const k = d.data().username || d.id;
     if (k !== ADMIN_USER && kicked.indexOf(k) === -1) avail.push(k);
   });
@@ -467,8 +603,6 @@ document.getElementById('cmdKickUser').addEventListener('click', async function(
     '<h3>🚪 Kick User</h3>' +
     '<label>Select Operator</label>' +
     '<select id="kickUser">' + options + '</select>' +
-    '<p style="color:#661111;font-size:0.7rem;text-align:center;margin-top:0.8rem;">' +
-    'When kicked, the user will see:<br>"تم طردك شخصياً من الموقع بواسطة المنشئ"</p>' +
     '<div class="modal-btns">' +
     '<button class="cancel" id="mxCancel">Cancel</button>' +
     '<button class="ok" id="confirmKick">🚪 Kick</button>' +
@@ -487,7 +621,7 @@ document.getElementById('cmdKickUser').addEventListener('click', async function(
   });
 });
 
-/* ---------- COMMAND 5: Unkick user ---------- */
+// Unkick user
 document.getElementById('cmdUnkickUser').addEventListener('click', async function(){
   const s = await loadSettings();
   const kicked = s.kicked || [];
