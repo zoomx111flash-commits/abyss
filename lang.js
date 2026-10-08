@@ -1,1 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABYSS · Settings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+  html, body { height: 100%; }
 
+  body {
+    background: var(--bg, #030308);
+    color: var(--text, #ebebf5);
+    min-height: 100vh;
+    overflow-x: hidden;
+    padding: 1.5rem;
+    transition: background 0.4s, color 0.4s;
+    background-image:
+      radial-gradient(circle at 15% 20%, var(--primary-glow, rgba(255,30,60,0.12)) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, var(--primary-glow, rgba(255,30,60,0.08)) 0%, transparent 45%);
+  }
+
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--border, rgba(255,30,60,0.04)) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border, rgba(255,30,60,0.04)) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    opacity: 0.6;
+  }
+
+  #app {
+    position: relative;
+    z-index: 10;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  /* ============ TOP BAR ============ */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--card, rgba(10,10,18,0.65));
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
+    border-radius: 16px;
+    box-shadow: 0 20px 60px -20px var(--primary-glow, rgba(255,30,60,0.3));
+    flex-wrap: wrap;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.4s, border-color 0.4s;
+  }
+
+  .top-bar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary, #ff1e3c), transparent);
+    animation: topLine 5s linear infinite;
+  }
+  @keyframes topLine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .top-bar h2 {
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text, #ebebf5);
+    text-shadow: 0 0 15px var(--primary-glow, rgba(255,30,60,0.6));
+  }
+
+  .back-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text-dim, #70707f);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .back-btn:hover {
+    background: var(--primary, #ff1e3c);
+    color: #000;
+    border-color: var(--primary, #ff1e3c);
+  }
+
+  /* ============ CARDS ============ */
+  .card {
+    background: var(--card, rgba(10,10,18,0.65));
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 20px 60px -20px var(--primary-glow, rgba(255,30,60,0.2));
+    position: relative;
+    overflow: hidden;
+    transition: background 0.4s, border-color 0.4s;
+  }
+
+  .card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--primary, #ff1e3c);
+    font-weight: 700;
+    padding-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border, rgba(255,30,60,0.15));
+  }
+
+  /* ============ LANGUAGE OPTIONS ============ */
+  .lang-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .lang-option {
+    padding: 1.25rem;
+    background: rgba(5, 5, 12, 0.5);
+    border: 2px solid var(--border, rgba(255,30,60,0.25));
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+    color: var(--text, #ebebf5);
+    font-family: inherit;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lang-option:hover {
+    border-color: var(--border-hover, rgba(255,30,60,0.65));
+    background: rgba(255, 255, 255, 0.03);
+    transform: translateY(-2px);
+  }
+
+  .lang-option.active {
+    border-color: var(--primary, #ff1e3c);
+    background: rgba(255, 30, 60, 0.08);
+    box-shadow: 0 0 25px var(--primary-glow, rgba(255,30,60,0.4));
+  }
+
+  .lang-option.active::before {
+    content: '✓';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary, #ff1e3c);
+    color: #000;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lang-flag {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+
+  .lang-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .lang-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim, #70707f);
+    margin-top: 0.25rem;
+    letter-spacing: 1px;
+  }
+
+  /* ============ THEME OPTIONS ============ */
+  .theme-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .theme-option {
+    padding: 1.15rem;
+    background: rgba(5, 5, 12, 0.5);
+    border: 2px solid var(--border, rgba(255,30,60,0.25));
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: left;
+    color: var(--text, #ebebf5);
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .theme-option:hover {
+    border-color: var(--border-hover, rgba(255,30,60,0.65));
+    background: rgba(255, 255, 255, 0.03);
+    transform: translateY(-2px);
+  }
+
+  .theme-option.active {
+    border-color: var(--primary, #ff1e3c);
+    background: rgba(255, 30, 60, 0.08);
+    box-shadow: 0 0 25px var(--primary-glow, rgba(255,30,60,0.4));
+  }
+
+  .theme-option.active::after {
+    content: '✓';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--primary, #ff1e3c);
+    color: #000;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .theme-swatch {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    box-shadow: 0 0 20px currentColor;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .theme-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .theme-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    margin-bottom: 0.2rem;
+  }
+
+  .theme-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim, #70707f);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ============ SAVED MESSAGE ============ */
+  .saved-toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    padding: 0.75rem 1.5rem;
+    background: var(--primary, #ff1e3c);
+    color: #000;
+    border-radius: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    z-index: 9999;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 30px var(--primary-glow, rgba(255,30,60,0.6));
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .saved-toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ============ MOBILE ============ */
+  @media (max-width: 480px) {
+    body { padding: 1rem; }
+    .top-bar { padding: 0.85rem 1rem; }
+    .lang-options { grid-template-columns: 1fr; }
+    .theme-options { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<script src="theme.js"></script>
+<script src="lang.js"></script>
+
+<div class="bg-layer"></div>
+
+<div id="app">
+  <div class="top-bar">
+    <a class="back-btn" href="dashboard.html" data-i18n="settings.back">← Back</a>
+    <h2 data-i18n="settings.title">Settings</h2>
+  </div>
+
+  <!-- LANGUAGE -->
+  <div class="card">
+    <div class="card-title">
+      <span>🌐</span>
+      <span data-i18n="settings.language">Language</span>
+    </div>
+    <div class="lang-options" id="langOptions">
+      <button class="lang-option" data-lang="en">
+        <span class="lang-flag">🇬🇧</span>
+        <div class="lang-name">English</div>
+        <div class="lang-sub">LTR</div>
+      </button>
+      <button class="lang-option" data-lang="ar">
+        <span class="lang-flag">🇸🇦</span>
+        <div class="lang-name">العربية</div>
+        <div class="lang-sub">RTL</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- THEME -->
+  <div class="card">
+    <div class="card-title">
+      <span>🎨</span>
+      <span data-i18n="settings.theme">Theme</span>
+    </div>
+    <div class="theme-options" id="themeOptions"></div>
+  </div>
+</div>
+
+<div class="saved-toast" id="savedToast">
+  ✓ <span data-i18n="settings.saved">Saved</span>
+</div>
+
+<script>
+/* ============================================================
+   SETTINGS PAGE LOGIC
+   ============================================================ */
+
+// Language selection
+function initLangOptions(){
+  const current = window.AbyssLang.getLang();
+  document.querySelectorAll('.lang-option').forEach(function(btn){
+    if (btn.dataset.lang === current) btn.classList.add('active');
+    btn.addEventListener('click', function(){
+      const lang = btn.dataset.lang;
+      window.AbyssLang.setLang(lang);
+      document.querySelectorAll('.lang-option').forEach(function(b){
+        b.classList.toggle('active', b.dataset.lang === lang);
+      });
+      showSaved();
+    });
+  });
+}
+
+// Theme selection
+function initThemeOptions(){
+  const themes = window.AbyssTheme.all();
+  const current = window.AbyssTheme.get();
+  const container = document.getElementById('themeOptions');
+  container.innerHTML = '';
+
+  Object.keys(themes).forEach(function(id){
+    const theme = themes[id];
+    const btn = document.createElement('button');
+    btn.className = 'theme-option';
+    if (id === current) btn.classList.add('active');
+    btn.dataset.theme = id;
+
+    const swatch = document.createElement('div');
+    swatch.className = 'theme-swatch';
+    swatch.style.background = theme.swatch;
+    swatch.style.color = theme.swatch;
+
+    const info = document.createElement('div');
+    info.className = 'theme-info';
+
+    const name = document.createElement('div');
+    name.className = 'theme-name';
+    name.textContent = theme.name;
+
+    const sub = document.createElement('div');
+    sub.className = 'theme-sub';
+    sub.textContent = id;
+
+    info.appendChild(name);
+    info.appendChild(sub);
+
+    btn.appendChild(swatch);
+    btn.appendChild(info);
+
+    btn.addEventListener('click', function(){
+      window.AbyssTheme.set(id);
+      document.querySelectorAll('.theme-option').forEach(function(b){
+        b.classList.toggle('active', b.dataset.theme === id);
+      });
+      showSaved();
+    });
+
+    container.appendChild(btn);
+  });
+}
+
+// Saved toast
+let toastTimer;
+function showSaved(){
+  const toast = document.getElementById('savedToast');
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){
+    toast.classList.remove('show');
+  }, 1500);
+}
+
+// React to language change
+window.addEventListener('langChanged', function(){
+  // Re-render to apply translations
+  if (window.AbyssLang) window.AbyssLang.apply();
+});
+
+// Init
+initLangOptions();
+initThemeOptions();
+</script>
+</body>
+</html>
