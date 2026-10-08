@@ -3,111 +3,490 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ABYSS · LOGIN</title>
+<title>ABYSS · SECURE ACCESS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; font-family: 'Courier New', monospace; }
-  body { background: #000; color: #ff6666; min-height: 100vh;
-    display: flex; align-items: center; justify-content: center; padding: 1rem;
-    overflow: hidden; }
-  #matrixCanvas { position: fixed; inset: 0; width: 100%; height: 100%;
-    z-index: 0; opacity: 0.3; pointer-events: none; }
-  body::before { content: ''; position: fixed; inset: 0;
-    background: radial-gradient(circle at center, rgba(255,0,0,0.1) 0%, rgba(0,0,0,0.95) 70%);
-    z-index: 1; pointer-events: none; }
-  .login-card { position: relative; z-index: 2;
-    background: rgba(10,0,0,0.9); backdrop-filter: blur(15px);
-    border-radius: 20px; padding: 2rem 1.5rem; width: 100%; max-width: 420px;
-    border: 1px solid #ff0000;
-    box-shadow: 0 0 30px rgba(255,0,0,0.4), 0 0 60px rgba(255,0,0,0.2);
-    animation: cardFloat 4s ease-in-out infinite; }
-  @keyframes cardFloat {
-    0%,100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); box-shadow: 0 0 45px rgba(255,0,0,0.7); }
+  * { box-sizing: border-box; margin: 0; padding: 0;
+    font-family: 'Inter', sans-serif; }
+
+  :root {
+    --bg: #050508;
+    --bg-2: #0a0a12;
+    --card: rgba(15, 15, 25, 0.7);
+    --border: rgba(255, 30, 60, 0.25);
+    --border-hover: rgba(255, 30, 60, 0.6);
+    --red: #ff1e3c;
+    --red-glow: rgba(255, 30, 60, 0.5);
+    --red-soft: rgba(255, 30, 60, 0.15);
+    --text: #e8e8f0;
+    --text-dim: #6a6a7a;
+    --text-mute: #3a3a4a;
+    --success: #00ff88;
+    --error: #ff1e3c;
   }
+
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    overflow: hidden;
+    position: relative;
+    font-family: 'Inter', sans-serif;
+  }
+
+  /* ============ BACKGROUND LAYERS ============ */
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 30, 60, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 30, 60, 0.04) 1px, transparent 1px);
+    background-size: 50px 50px;
+    z-index: 0;
+    pointer-events: none;
+    mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
+  }
+
+  .bg-glow {
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 30%, rgba(255, 30, 60, 0.15) 0%, transparent 40%),
+      radial-gradient(circle at 80% 70%, rgba(120, 0, 255, 0.1) 0%, transparent 40%),
+      radial-gradient(circle at 50% 50%, rgba(255, 30, 60, 0.08) 0%, transparent 60%);
+    z-index: 0;
+    pointer-events: none;
+    animation: bgPulse 8s ease-in-out infinite;
+  }
+
+  @keyframes bgPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  .bg-scan {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(255, 30, 60, 0.03) 50%,
+      transparent 100%
+    );
+    background-size: 100% 8px;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.4;
+  }
+
+  #matrixCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    opacity: 0.06;
+    pointer-events: none;
+  }
+
+  /* ============ LOGIN CARD ============ */
+  .login-card {
+    position: relative;
+    z-index: 10;
+    background: var(--card);
+    backdrop-filter: blur(24px) saturate(150%);
+    -webkit-backdrop-filter: blur(24px) saturate(150%);
+    border-radius: 24px;
+    padding: 3rem 2.5rem 2.5rem;
+    width: 100%;
+    max-width: 440px;
+    border: 1px solid var(--border);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+      0 24px 60px -20px rgba(255, 30, 60, 0.3),
+      0 8px 30px -10px rgba(0, 0, 0, 0.8);
+    animation: cardEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+  }
+
+  @keyframes cardEnter {
+    from {
+      opacity: 0;
+      transform: translateY(20px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* خط علوي متحرك */
+  .login-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg,
+      transparent,
+      var(--red) 50%,
+      transparent);
+    animation: topLine 3s linear infinite;
+  }
+
+  @keyframes topLine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* ============ TERMINAL HEADER ============ */
+  .terminal-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(255, 30, 60, 0.15);
+  }
+
+  .dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .dot:hover { transform: scale(1.2); }
+  .dot.red {
+    background: #ff5f56;
+    box-shadow: 0 0 8px rgba(255, 95, 86, 0.6);
+  }
+  .dot.yellow {
+    background: #ffbd2e;
+    box-shadow: 0 0 8px rgba(255, 189, 46, 0.6);
+  }
+  .dot.green {
+    background: #27c93f;
+    box-shadow: 0 0 8px rgba(39, 201, 63, 0.6);
+  }
+
+  .terminal-title {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ============ TITLE ============ */
+  .brand {
+    text-align: center;
+    margin-bottom: 2.25rem;
+  }
+
+  .brand-title {
+    font-size: 2.4rem;
+    font-weight: 900;
+    letter-spacing: 8px;
+    color: var(--red);
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 0.65rem;
+    text-shadow:
+      0 0 20px var(--red-glow),
+      0 0 40px rgba(255, 30, 60, 0.3);
+    position: relative;
+    animation: titleGlitch 4s infinite;
+  }
+
+  @keyframes titleGlitch {
+    0%, 92%, 100% {
+      transform: translate(0);
+      text-shadow: 0 0 20px var(--red-glow), 0 0 40px rgba(255, 30, 60, 0.3);
+    }
+    93% {
+      transform: translate(-2px, 1px);
+      text-shadow: 2px 0 #00ffff, -2px 0 #ff00ff;
+    }
+    94% {
+      transform: translate(2px, -1px);
+      text-shadow: -2px 0 #00ffff, 2px 0 #ff00ff;
+    }
+    95% {
+      transform: translate(-1px, -1px);
+    }
+    96% {
+      transform: translate(1px, 1px);
+      text-shadow: 0 0 20px var(--red-glow);
+    }
+  }
+
+  .brand-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-mute);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .brand-sub::before,
+  .brand-sub::after {
+    content: '';
+    width: 24px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+  }
+
+  /* ============ INPUTS ============ */
+  .input-group {
+    margin-bottom: 1.1rem;
+    position: relative;
+  }
+
+  .input-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    margin-bottom: 0.55rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .input-label::before {
+    content: '›';
+    color: var(--red);
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(5, 5, 10, 0.6);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 30, 60, 0.15);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+  }
+
+  .input-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+      transparent,
+      rgba(255, 30, 60, 0.1),
+      transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+  }
+
+  .input-wrapper:focus-within::before {
+    transform: translateX(100%);
+  }
+
+  .input-wrapper:focus-within {
+    border-color: var(--border-hover);
+    background: rgba(10, 5, 10, 0.8);
+    box-shadow:
+      0 0 0 3px rgba(255, 30, 60, 0.1),
+      0 0 20px rgba(255, 30, 60, 0.15);
+  }
+
+  .input-wrapper input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    padding: 1rem 1.15rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: var(--text);
+    outline: none;
+    letter-spacing: 0.5px;
+  }
+
+  .input-wrapper input::placeholder {
+    color: var(--text-mute);
+    font-weight: 300;
+    letter-spacing: 1px;
+  }
+
+  /* ============ BUTTON ============ */
+  .btn-primary {
+    width: 100%;
+    padding: 1.05rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ff1e3c, #cc0022);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow:
+      0 4px 20px rgba(255, 30, 60, 0.4),
+      0 0 40px rgba(255, 30, 60, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    margin-top: 1.5rem;
+  }
+
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s;
+  }
+
+  .btn-primary:hover::before {
+    transform: translateX(100%);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 30px rgba(255, 30, 60, 0.5),
+      0 0 60px rgba(255, 30, 60, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0) scale(0.99);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: wait;
+    transform: none;
+  }
+
+  /* ============ MESSAGE ============ */
+  .message-area {
+    margin-top: 1.5rem;
+    padding: 1rem 1.15rem;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.4);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--text-dim);
+    text-align: center;
+    letter-spacing: 1px;
+    border: 1px solid rgba(255, 30, 60, 0.1);
+    min-height: 3.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+
+  .message-area.success {
+    color: var(--success);
+    border-color: rgba(0, 255, 136, 0.4);
+    background: rgba(0, 255, 136, 0.05);
+    box-shadow: 0 0 25px rgba(0, 255, 136, 0.15);
+  }
+
+  .message-area.error {
+    color: var(--error);
+    border-color: rgba(255, 30, 60, 0.4);
+    background: rgba(255, 30, 60, 0.05);
+    box-shadow: 0 0 25px rgba(255, 30, 60, 0.15);
+  }
+
+  /* ============ SHAKE ============ */
   @keyframes shake {
-    0%,100%{transform:translateX(0)}20%{transform:translateX(-12px)}
-    40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)} }
-  .shake { animation: shake 0.5s ease-in-out; }
-  .terminal-header { display: flex; align-items: center; gap: 8px;
-    margin-bottom: 1.2rem; padding-bottom: 0.8rem;
-    border-bottom: 1px solid rgba(255,0,0,0.3); }
-  .dot { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
-  .dot.red { background: #ff0000; color: #ff0000; }
-  .dot.yellow { background: #ffaa00; color: #ffaa00; }
-  .dot.green { background: #00ff44; color: #00ff44; }
-  .terminal-title { margin-left: auto; font-size: 0.65rem; color: #ff6666;
-    letter-spacing: 2px; text-transform: uppercase; }
-  h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 4px;
-    color: #ff1a1a; text-align: center; margin-bottom: 0.4rem;
-    text-shadow: 0 0 10px #ff0000; }
-  .subtitle { text-align: center; font-size: 0.65rem; color: #991111;
-    letter-spacing: 3px; margin-bottom: 1.5rem; text-transform: uppercase; }
-  .input-group { margin-bottom: 1rem; }
-  label { display: block; font-size: 0.65rem; color: #ff6666;
-    margin-bottom: 0.4rem; letter-spacing: 2px; text-transform: uppercase; }
-  .input-wrapper { display: flex; align-items: center;
-    background: rgba(20,0,0,0.9); border-radius: 8px;
-    border: 1px solid #4d0000; transition: all 0.3s; }
-  .input-wrapper:focus-within { border-color: #ff0000;
-    box-shadow: 0 0 15px rgba(255,0,0,0.6); }
-  .input-wrapper input { width: 100%; background: transparent;
-    border: none; padding: 0.8rem 1rem; font-size: 0.9rem;
-    color: #ffcccc; outline: none; font-family: inherit;
-    letter-spacing: 1px; }
-  .input-wrapper input::placeholder { color: #551111; }
-  button.primary { width: 100%; padding: 0.9rem; font-size: 0.9rem;
-    font-weight: 700; border: none; border-radius: 8px;
-    background: linear-gradient(135deg, #8b0000, #ff0000, #8b0000);
-    background-size: 200% 200%; color: white; cursor: pointer;
-    letter-spacing: 3px; text-transform: uppercase;
-    box-shadow: 0 0 20px rgba(255,0,0,0.6);
-    transition: all 0.3s; margin-top: 1.2rem;
-    animation: gradientShift 3s ease infinite;
-    font-family: inherit; }
-  @keyframes gradientShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
-  button.primary:hover { box-shadow: 0 0 40px rgba(255,0,0,1); }
-  button.primary:disabled { opacity: 0.5; cursor: wait; }
-  .message-area { margin-top: 1.2rem; padding: 0.9rem;
-    border-radius: 8px; background: rgba(0,0,0,0.7);
-    font-size: 0.75rem; text-align: center; color: #ff9999;
-    border: 1px solid #4d0000; min-height: 3rem;
-    display: flex; align-items: center; justify-content: center;
-    letter-spacing: 1px; }
-  .message-area.success { border-color: #00ff44;
-    background: rgba(0,30,10,0.5); color: #00ff88;
-    box-shadow: 0 0 20px rgba(0,255,68,0.5); }
-  .message-area.error { border-color: #ff0000;
-    background: rgba(40,0,0,0.5); color: #ff4444;
-    box-shadow: 0 0 20px rgba(255,0,0,0.5); }
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-10px); }
+    40% { transform: translateX(10px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+
+  .shake { animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+
+  /* ============ SCROLLBAR ============ */
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 30, 60, 0.3);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255, 30, 60, 0.5); }
+
+  /* ============ MOBILE ============ */
+  @media (max-width: 480px) {
+    .login-card { padding: 2.25rem 1.5rem 1.75rem; border-radius: 20px; }
+    .brand-title { font-size: 1.9rem; letter-spacing: 5px; }
+    body { padding: 1rem; }
+  }
 </style>
 </head>
 <body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+<div class="bg-scan"></div>
 <canvas id="matrixCanvas"></canvas>
 
 <div class="login-card" id="loginCard">
+
   <div class="terminal-header">
-    <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-    <span class="terminal-title">secure_shell v4</span>
+    <span class="dot red"></span>
+    <span class="dot yellow"></span>
+    <span class="dot green"></span>
+    <span class="terminal-title">abyss://secure-shell</span>
   </div>
-  <h1>Abyss</h1>
-  <div class="subtitle">Hidden Network</div>
+
+  <div class="brand">
+    <div class="brand-title">ABYSS</div>
+    <div class="brand-sub">Hidden Network</div>
+  </div>
 
   <form id="loginForm" onsubmit="return false;">
     <div class="input-group">
-      <label>› Operator ID</label>
+      <label class="input-label">Operator ID</label>
       <div class="input-wrapper">
         <input type="text" id="loginUser" placeholder="Devil-0" autocomplete="off" spellcheck="false">
       </div>
     </div>
+
     <div class="input-group">
-      <label>› Passphrase</label>
+      <label class="input-label">Passphrase</label>
       <div class="input-wrapper">
         <input type="password" id="loginPass" placeholder="••••••••" autocomplete="off" spellcheck="false">
       </div>
     </div>
-    <button type="submit" class="primary" id="loginBtn">▸ Authenticate</button>
+
+    <button type="submit" class="btn-primary" id="loginBtn">Authenticate →</button>
   </form>
-  <div id="loginMsg" class="message-area">◈ awaiting credentials ◈</div>
+
+  <div id="loginMsg" class="message-area">◈ Awaiting credentials</div>
 </div>
 
 <script type="module">
@@ -134,22 +513,16 @@ const ADMIN_USER = "Devil-0";
 
 function email(id){ return id.toLowerCase() + "@abyss.local"; }
 
-/* ✅ فحص حالة الحساب: مقفل؟ معلق؟ */
 async function checkStatus(username){
   try {
     const snap = await getDoc(doc(db, 'settings', 'global'));
     if (!snap.exists()) return { ok: true };
     const data = snap.data();
     const isOwner = username.toLowerCase() === ADMIN_USER.toLowerCase();
-
     if (!isOwner){
-      if (data.locked === true){
-        return { ok: false, reason: 'locked' };
-      }
+      if (data.locked === true) return { ok: false, reason: 'locked' };
       const suspended = data.suspended || [];
-      if (suspended.indexOf(username) !== -1){
-        return { ok: false, reason: 'suspended' };
-      }
+      if (suspended.indexOf(username) !== -1) return { ok: false, reason: 'suspended' };
     }
     return { ok: true };
   } catch(e){
@@ -174,46 +547,43 @@ function shake(){
   setTimeout(function(){ card.classList.remove('shake'); }, 500);
 }
 
-/* Matrix BG */
+/* Matrix BG — أهدأ وأخف */
 const canvas = document.getElementById('matrixCanvas');
 const ctx = canvas.getContext('2d');
 function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
 resize(); addEventListener('resize', resize);
-const chars = 'アカサタナハマヤラワ0123456789ABCDEF';
-const fs = 14;
+const chars = 'アカサタナハマヤラワ0123456789';
+const fs = 16;
 const drops = Array(Math.floor(canvas.width / fs)).fill(1);
 setInterval(function(){
-  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
   ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = '#ff0000';
-  ctx.font = fs + 'px monospace';
+  ctx.fillStyle = '#ff1e3c';
+  ctx.font = fs + 'px JetBrains Mono, monospace';
   for (var i=0;i<drops.length;i++){
     var t = chars[Math.floor(Math.random()*chars.length)];
     ctx.fillText(t, i*fs, drops[i]*fs);
     if (drops[i]*fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
     drops[i]++;
   }
-}, 50);
+}, 60);
 
-/* Auto-redirect if already logged in */
 onAuthStateChanged(auth, async function(user){
   if (user){
     const emailUser = user.email.split('@')[0];
     const formatted = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
     const status = await checkStatus(formatted);
-
     if (!status.ok){
       await signOut(auth);
       sessionStorage.removeItem('abyss_user');
       if (status.reason === 'locked'){
-        setMsg('⛓ The Abyss is locked by the creator.', 'error');
+        setMsg('⛓ ABYSS LOCKED', 'error');
       } else {
-        setMsg('🚫 Your account is suspended.', 'error');
+        setMsg('🚫 Account suspended', 'error');
       }
       shake();
       return;
     }
-
     sessionStorage.setItem('abyss_user', formatted);
     window.location.replace('dashboard.html');
   }
@@ -223,24 +593,23 @@ form.addEventListener('submit', async function(e){
   e.preventDefault();
   var u = userInput.value.trim();
   var p = passInput.value;
-  if (!u || !p){ setMsg('⚠ credentials required', 'error'); shake(); return; }
+  if (!u || !p){ setMsg('⚠ Credentials required', 'error'); shake(); return; }
 
   btn.disabled = true;
-  setMsg('◈ decrypting...', 'info');
+  setMsg('◈ Decrypting...', 'info');
 
   try {
     await signInWithEmailAndPassword(auth, email(u), p);
     const formatted = u.charAt(0).toUpperCase() + u.slice(1);
 
-    // ✅ فحص الحالة
     const status = await checkStatus(formatted);
     if (!status.ok){
       await signOut(auth);
       sessionStorage.removeItem('abyss_user');
       if (status.reason === 'locked'){
-        setMsg('⛓ The Abyss is locked by the creator.', 'error');
+        setMsg('⛓ ABYSS LOCKED', 'error');
       } else {
-        setMsg('🚫 This account is suspended. لا توجد فائدة من الدخول.', 'error');
+        setMsg('🚫 Account suspended', 'error');
       }
       shake();
       btn.disabled = false;
@@ -248,17 +617,17 @@ form.addEventListener('submit', async function(e){
     }
 
     sessionStorage.setItem('abyss_user', formatted);
-    setMsg('✓ access granted — entering...', 'success');
+    setMsg('✓ Access granted', 'success');
     setTimeout(function(){
       window.location.replace('dashboard.html');
     }, 500);
   } catch (err){
     console.error(err);
-    var msgText = '✕ invalid credentials';
-    if (err.code === 'auth/user-not-found') msgText = '✕ unknown operator';
-    if (err.code === 'auth/wrong-password') msgText = '✕ invalid passphrase';
-    if (err.code === 'auth/too-many-requests') msgText = '⚠ too many attempts — wait';
-    if (err.code === 'auth/invalid-email') msgText = '✕ invalid operator id';
+    var msgText = '✕ Invalid credentials';
+    if (err.code === 'auth/user-not-found') msgText = '✕ Unknown operator';
+    if (err.code === 'auth/wrong-password') msgText = '✕ Invalid passphrase';
+    if (err.code === 'auth/too-many-requests') msgText = '⚠ Too many attempts — wait';
+    if (err.code === 'auth/invalid-email') msgText = '✕ Invalid operator id';
     setMsg(msgText, 'error');
     shake();
     btn.disabled = false;
