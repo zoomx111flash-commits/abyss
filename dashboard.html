@@ -990,12 +990,13 @@ function showSuspendedScreen(reason){
 
 /* ============ SECTIONS ============ */
 const DEFAULT_SECTIONS = [
-  { name: 'Chat',  name_ar: 'الشات', icon: '💬', desc: 'General chat',  desc_ar: 'الشات العام', url: 'chat.html', default: true, order: 1 },
-  { name: 'DM',    name_ar: 'الخاص', icon: '✉',  desc: 'Direct messages', desc_ar: 'رسائل خاصة', url: 'dm.html',   default: true, order: 2 },
-  { name: 'Files', name_ar: 'الملفات', icon: '📁', desc: 'Image vault',   desc_ar: 'خزنة الصور', url: 'files.html', default: true, order: 3 },
-  { name: 'Names', name_ar: 'الأسماء', icon: '👤', desc: 'Account registry', desc_ar: 'سجل الأسماء', url: 'accounts.html', default: true, order: 4 }
-  { name: 'Names', name_ar: 'نظام لينكس', icon: '👤', desc: 'Linux Terminal', desc_ar: 'لوحة لينكس', url: 'terminal.html', default: true, order: 4 }
+  { name: 'Chat',     name_ar: 'الشات',    icon: '💬', desc: 'General chat',     desc_ar: 'الشات العام',    url: 'chat.html',     default: true, order: 1 },
+  { name: 'DM',       name_ar: 'الخاص',    icon: '✉',  desc: 'Direct messages',  desc_ar: 'رسائل خاصة',     url: 'dm.html',       default: true, order: 2 },
+  { name: 'Files',    name_ar: 'الملفات',  icon: '📁', desc: 'Image vault',      desc_ar: 'خزنة الصور',     url: 'files.html',    default: true, order: 3 },
+  { name: 'Names',    name_ar: 'الأسماء',  icon: '👤', desc: 'Account registry', desc_ar: 'سجل الأسماء',    url: 'accounts.html', default: true, order: 4 },
+  { name: 'Terminal', name_ar: 'نظام لينكس', icon: '💻', desc: 'Linux Terminal',   desc_ar: 'لوحة لينكس',     url: 'terminal.html', default: true, order: 5 }
 ];
+
 const ADMIN_SECTION = { name: 'Commands', name_ar: 'الأوامر', icon: '🔒', desc: 'Admin center', desc_ar: 'مركز الأوامر', url: 'admin.html', default: true, order: 99 };
 
 async function renderSections(){
