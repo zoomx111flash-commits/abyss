@@ -12,6 +12,20 @@
   body::before { content: ''; position: fixed; inset: 0;
     background: radial-gradient(circle at center, rgba(255,0,0,0.08) 0%, rgba(0,0,0,0.95) 70%);
     z-index: 1; pointer-events: none; }
+  #app { position: relative; z-index: 2; padding: 1rem;<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABYSS · COMMAND CENTER</title>
+<style>
+  * { box-sizing: border-box; margin: 0; font-family: 'Courier New', monospace; }
+  body { background: #000; color: #ff6666; min-height: 100vh; }
+  #matrixCanvas { position: fixed; inset: 0; width: 100%; height: 100%;
+    z-index: 0; opacity: 0.2; pointer-events: none; }
+  body::before { content: ''; position: fixed; inset: 0;
+    background: radial-gradient(circle at center, rgba(255,0,0,0.08) 0%, rgba(0,0,0,0.95) 70%);
+    z-index: 1; pointer-events: none; }
   #app { position: relative; z-index: 2; padding: 1rem;
     max-width: 1100px; margin: 0 auto; }
 
@@ -101,6 +115,60 @@
     font-family: inherit; padding: 0; }
   .section-card:hover .delete-btn.admin-visible { display: flex; }
   .section-card .delete-btn:hover { background: #ff0000; color: #000; }
+
+  /* ✅ شاشة الطرد / التعليق */
+  .suspended-screen {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 4rem 2rem;
+    background: rgba(10,0,0,0.9);
+    border: 2px solid #ff0000;
+    border-radius: 20px;
+    box-shadow: 0 0 60px rgba(255,0,0,0.7), inset 0 0 40px rgba(255,0,0,0.1);
+    animation: pulseKick 2s infinite;
+  }
+  @keyframes pulseKick {
+    0%, 100% {
+      box-shadow: 0 0 60px rgba(255,0,0,0.7), inset 0 0 40px rgba(255,0,0,0.1);
+    }
+    50% {
+      box-shadow: 0 0 90px rgba(255,0,0,1), inset 0 0 60px rgba(255,0,0,0.2);
+    }
+  }
+  .suspended-icon { font-size: 5rem; margin-bottom: 1rem;
+    text-shadow: 0 0 30px #ff0000; }
+  .suspended-title { color: #ff1a1a; font-size: 1.8rem; letter-spacing: 6px;
+    text-transform: uppercase; margin-bottom: 1rem;
+    text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000; }
+  .suspended-desc { color: #ff6666; font-size: 1rem; letter-spacing: 2px;
+    margin-bottom: 2rem; line-height: 1.6; }
+  .suspended-sub { color: #991111; font-size: 0.85rem; }
+  .suspended-footer {
+    border-top: 1px solid rgba(255,0,0,0.3);
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+  }
+  .suspended-footer p {
+    color: #661111; font-size: 0.75rem;
+    letter-spacing: 2px; margin-bottom: 1rem;
+  }
+  .suspended-footer .en {
+    color: #440000; font-size: 0.7rem;
+  }
+  .exit-btn {
+    padding: 0.8rem 2rem;
+    background: transparent;
+    border: 1px solid #ff0000;
+    color: #ff6666;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 3px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .exit-btn:hover { background: #ff0000; color: #000; }
 </style>
 </head>
 <body>
@@ -115,7 +183,6 @@
     </div>
   </div>
 
-  <!-- Admin: Add Section Panel -->
   <div class="admin-panel" id="adminPanel">
     <div style="font-size:0.7rem;color:#ff1a1a;letter-spacing:3px;
       text-transform:uppercase;margin-bottom:0.8rem;
@@ -180,9 +247,8 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const ADMIN_USER = "Devil-0";
-const ADMIN_USER_LOWER = "devil-0";
 
-/* ---------- Matrix BG ---------- */
+/* Matrix BG */
 const canvas = document.getElementById('matrixCanvas');
 const ctx = canvas.getContext('2d');
 function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
@@ -203,7 +269,7 @@ setInterval(function(){
   }
 }, 50);
 
-/* ---------- Auth ---------- */
+/* Auth */
 let currentUser = null;
 let isAdmin = false;
 
@@ -213,102 +279,69 @@ onAuthStateChanged(auth, async function(user){
     return;
   }
 
-  // ✅ جيب المستخدم بالشكل الصحيح
   let stored = sessionStorage.getItem('abyss_user');
   if (!stored && user.email){
     const emailUser = user.email.split('@')[0];
     stored = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
   }
   currentUser = stored || 'unknown';
-  isAdmin = (currentUser.toLowerCase() === 'devil-0');
-
-  // ✅ افحص إذا المستخدم مطرود
-  let isKicked = false;
-  try {
-    const settingsSnap = await getDoc(doc(db, 'settings', 'global'));
-    if (settingsSnap.exists()){
-      const settings = settingsSnap.data();
-      const kicked = settings.kicked || [];
-      // Devil-0 لا يُطرد أبداً
-      if (currentUser.toLowerCase() !== 'devil-0' && kicked.indexOf(currentUser) !== -1){
-        isKicked = true;
-      }
-    }
-  } catch(e){
-    console.error('access check failed:', e);
-  }
+  isAdmin = (currentUser.toLowerCase() === ADMIN_USER.toLowerCase());
 
   const badge = document.getElementById('userBadge');
   const grid = document.getElementById('sectionGrid');
   const adminPanel = document.getElementById('adminPanel');
 
-  // ============================================================
-  // ✅ إذا المستخدم مطرود — أخفِ كل الأقسام واعرض رسالة طرد
-  // ============================================================
-  if (isKicked){
+  // ✅ فحص إذا المستخدم معلق
+  let isSuspended = false;
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'global'));
+    if (snap.exists()){
+      const data = snap.data();
+      const suspended = data.suspended || [];
+      if (!isAdmin && suspended.indexOf(currentUser) !== -1){
+        isSuspended = true;
+      }
+    }
+  } catch(e){
+    console.error('suspend check failed:', e);
+  }
+
+  if (isSuspended){
     badge.textContent = currentUser;
     badge.style.background = 'rgba(120, 0, 0, 0.4)';
     badge.style.color = '#ff4444';
     badge.style.borderColor = '#ff0000';
     badge.style.boxShadow = '0 0 20px rgba(255, 0, 0, 0.8)';
 
-    // أخفِ لوحة الأدمن
     adminPanel.classList.remove('active');
 
-    // اعرض شاشة الطرد بدل الأقسام
     grid.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center;
-        padding: 4rem 2rem; background: rgba(10,0,0,0.9);
-        border: 2px solid #ff0000; border-radius: 20px;
-        box-shadow: 0 0 60px rgba(255,0,0,0.7), inset 0 0 40px rgba(255,0,0,0.1);
-        animation: pulseKick 2s infinite;">
-        <div style="font-size: 5rem; margin-bottom: 1rem;
-          text-shadow: 0 0 30px #ff0000;">🚫</div>
-        <h1 style="color: #ff1a1a; font-size: 1.8rem; letter-spacing: 6px;
-          text-transform: uppercase; margin-bottom: 1rem;
-          text-shadow: 0 0 20px #ff0000, 0 0 40px #ff0000;">
-          ACCESS DENIED
-        </h1>
-        <p style="color: #ff6666; font-size: 1rem; letter-spacing: 2px;
-          margin-bottom: 2rem; line-height: 1.6;">
-          تم طردك شخصياً من الموقع<br>
-          <span style="color: #991111; font-size: 0.85rem;">بواسطة المنشئ</span>
+      <div class="suspended-screen">
+        <div class="suspended-icon">🚫</div>
+        <h1 class="suspended-title">SUSPENDED</h1>
+        <p class="suspended-desc">
+          تم تعليق حسابك<br>
+          <span class="suspended-sub">بواسطة المنشئ</span>
         </p>
-        <div style="border-top: 1px solid rgba(255,0,0,0.3);
-          padding-top: 1.5rem; margin-top: 1.5rem;">
-          <p style="color: #661111; font-size: 0.75rem;
-            letter-spacing: 2px; margin-bottom: 1rem;">
+        <div class="suspended-footer">
+          <p>
             لا توجد فائدة من تسجيل الدخول مرة أخرى<br>
-            <span style="color: #440000; font-size: 0.7rem;">THERE IS NO POINT IN TRYING AGAIN</span>
+            <span class="en">THERE IS NO POINT IN TRYING AGAIN</span>
           </p>
-          <button onclick="(async()=>{
-            const {getAuth, signOut} = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
-            sessionStorage.clear();
-            await signOut(getAuth());
-            window.location.href = 'index.html';
-          })()" 
-          style="padding: 0.8rem 2rem; background: transparent;
-            border: 1px solid #ff0000; color: #ff6666;
-            border-radius: 8px; cursor: pointer;
-            font-family: 'Courier New', monospace; letter-spacing: 3px;
-            font-size: 0.8rem; text-transform: uppercase;
-            transition: all 0.2s;"
-          onmouseover="this.style.background='#ff0000';this.style.color='#000'"
-          onmouseout="this.style.background='transparent';this.style.color='#ff6666'">
-            ⏻ Exit
-          </button>
+          <button class="exit-btn" id="suspendExit">⏻ Exit</button>
         </div>
       </div>
     `;
 
-    // خلي الجلسة تحتوي على علامة "طرد"
-    sessionStorage.setItem('abyss_kicked', 'true');
+    document.getElementById('suspendExit').addEventListener('click', async function(){
+      sessionStorage.clear();
+      await signOut(auth);
+      window.location.href = 'index.html';
+    });
     return;
   }
 
-  // ✅ المستخدم عادي — اعرض الأقسام بشكل طبيعي
-  sessionStorage.removeItem('abyss_kicked');
-
+  // المستخدم عادي
   badge.textContent = currentUser + (isAdmin ? ' ★' : '');
   if (isAdmin) badge.classList.add('admin');
 
@@ -325,7 +358,7 @@ document.getElementById('logoutBtn').addEventListener('click', async function(){
   window.location.replace('index.html');
 });
 
-/* ---------- Default sections (always shown) ---------- */
+/* Sections */
 const DEFAULT_SECTIONS = [
   { name: 'Chat',  icon: '💬', desc: 'General chat',  url: 'chat.html',    default: true, order: 1 },
   { name: 'Files', icon: '📁', desc: 'Image vault',   url: 'files.html',   default: true, order: 2 },
@@ -333,12 +366,10 @@ const DEFAULT_SECTIONS = [
 ];
 const ADMIN_SECTION = { name: 'Commands', icon: '🔒', desc: 'Admin center', url: 'admin.html', default: true, order: 99 };
 
-/* ---------- Render all sections ---------- */
 async function renderSections(){
   const grid = document.getElementById('sectionGrid');
   grid.innerHTML = '';
 
-  // 1. Load custom sections from Firestore
   let custom = [];
   try {
     const snap = await getDocs(query(collection(db, 'sections'), orderBy('order', 'asc')));
@@ -349,31 +380,25 @@ async function renderSections(){
     console.error('Failed to load custom sections:', e);
   }
 
-  // 2. Merge defaults + custom
   const sections = DEFAULT_SECTIONS.slice();
   custom.forEach(function(c){
     sections.push(Object.assign({ default: false }, c));
   });
 
-  // Sort by order
   sections.sort(function(a, b){
     return (a.order || 50) - (b.order || 50);
   });
 
-  // 3. Add admin section at the end (only for Devil-0)
   if (isAdmin){
     sections.push(ADMIN_SECTION);
   }
 
-  // 4. Render
   sections.forEach(function(s){
     const hasUrl = s.url && s.url.trim() !== '';
-
     const card = document.createElement('a');
     card.className = 'section-card';
     if (!hasUrl) card.classList.add('empty');
 
-    // Only make it a clickable link if has URL
     if (hasUrl){
       card.href = s.url;
     } else {
@@ -386,89 +411,6 @@ async function renderSections(){
       '<div class="name">' + escapeHtml(s.name || 'Untitled') + '</div>' +
       '<div class="desc">' + escapeHtml(s.desc || (hasUrl ? '' : 'empty — awaiting setup')) + '</div>';
 
-    // Delete button (only for custom sections + admin)
     if (isAdmin && !s.default && s.id){
       const del = document.createElement('button');
-      del.className = 'delete-btn admin-visible';
-      del.textContent = '✕';
-      del.title = 'Delete section';
-      del.addEventListener('click', async function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        if (!confirm('Delete section "' + s.name + '"?')) return;
-        try {
-          await deleteDoc(doc(db, 'sections', s.id));
-          await renderSections();
-        } catch(err){
-          console.error(err);
-          alert('Failed to delete: ' + err.message);
-        }
-      });
-      card.appendChild(del);
-    }
-
-    grid.appendChild(card);
-  });
-}
-
-function escapeHtml(s){
-  return String(s||'').replace(/[&<>"']/g, function(c){
-    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
-  });
-}
-
-/* ---------- Add new section ---------- */
-document.getElementById('addSectionBtn').addEventListener('click', async function(){
-  if (!isAdmin) return;
-
-  const icon = document.getElementById('newIcon').value.trim() || '🔷';
-  const name = document.getElementById('newName').value.trim();
-  const desc = document.getElementById('newDesc').value.trim();
-  const url  = document.getElementById('newUrl').value.trim();
-
-  if (!name){
-    alert('⚠ Section name is required');
-    return;
-  }
-
-  const btn = this;
-  btn.disabled = true;
-  btn.textContent = '◈ adding...';
-
-  try {
-    // Determine order: max existing + 10
-    const snap = await getDocs(collection(db, 'sections'));
-    let maxOrder = 10;
-    snap.forEach(function(d){
-      const o = d.data().order || 0;
-      if (o > maxOrder) maxOrder = o;
-    });
-
-    await addDoc(collection(db, 'sections'), {
-      icon: icon,
-      name: name,
-      desc: desc,
-      url: url,          // may be empty
-      order: maxOrder + 10,
-      owner: currentUser,
-      createdAt: Date.now()
-    });
-
-    // Clear inputs
-    document.getElementById('newIcon').value = '🔷';
-    document.getElementById('newName').value = '';
-    document.getElementById('newDesc').value = '';
-    document.getElementById('newUrl').value = '';
-
-    await renderSections();
-  } catch (e){
-    console.error(e);
-    alert('Failed to add section: ' + e.message);
-  }
-
-  btn.disabled = false;
-  btn.textContent = '▸ Add Section';
-});
-</script>
-</body>
-</html>
+      del.class
