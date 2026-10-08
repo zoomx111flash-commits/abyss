@@ -12,20 +12,6 @@
   body::before { content: ''; position: fixed; inset: 0;
     background: radial-gradient(circle at center, rgba(255,0,0,0.08) 0%, rgba(0,0,0,0.95) 70%);
     z-index: 1; pointer-events: none; }
-  #app { position: relative; z-index: 2; padding: 1rem;<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ABYSS · COMMAND CENTER</title>
-<style>
-  * { box-sizing: border-box; margin: 0; font-family: 'Courier New', monospace; }
-  body { background: #000; color: #ff6666; min-height: 100vh; }
-  #matrixCanvas { position: fixed; inset: 0; width: 100%; height: 100%;
-    z-index: 0; opacity: 0.2; pointer-events: none; }
-  body::before { content: ''; position: fixed; inset: 0;
-    background: radial-gradient(circle at center, rgba(255,0,0,0.08) 0%, rgba(0,0,0,0.95) 70%);
-    z-index: 1; pointer-events: none; }
   #app { position: relative; z-index: 2; padding: 1rem;
     max-width: 1100px; margin: 0 auto; }
 
@@ -116,7 +102,6 @@
   .section-card:hover .delete-btn.admin-visible { display: flex; }
   .section-card .delete-btn:hover { background: #ff0000; color: #000; }
 
-  /* ✅ شاشة الطرد / التعليق */
   .suspended-screen {
     grid-column: 1 / -1;
     text-align: center;
@@ -291,7 +276,6 @@ onAuthStateChanged(auth, async function(user){
   const grid = document.getElementById('sectionGrid');
   const adminPanel = document.getElementById('adminPanel');
 
-  // ✅ فحص إذا المستخدم معلق
   let isSuspended = false;
   try {
     const snap = await getDoc(doc(db, 'settings', 'global'));
@@ -341,7 +325,6 @@ onAuthStateChanged(auth, async function(user){
     return;
   }
 
-  // المستخدم عادي
   badge.textContent = currentUser + (isAdmin ? ' ★' : '');
   if (isAdmin) badge.classList.add('admin');
 
@@ -413,4 +396,84 @@ async function renderSections(){
 
     if (isAdmin && !s.default && s.id){
       const del = document.createElement('button');
-      del.class
+      del.className = 'delete-btn admin-visible';
+      del.textContent = '✕';
+      del.title = 'Delete section';
+      del.addEventListener('click', async function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        if (!confirm('Delete section "' + s.name + '"?')) return;
+        try {
+          await deleteDoc(doc(db, 'sections', s.id));
+          await renderSections();
+        } catch(err){
+          console.error(err);
+          alert('Failed to delete: ' + err.message);
+        }
+      });
+      card.appendChild(del);
+    }
+
+    grid.appendChild(card);
+  });
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+
+/* Add Section */
+document.getElementById('addSectionBtn').addEventListener('click', async function(){
+  if (!isAdmin) return;
+
+  const icon = document.getElementById('newIcon').value.trim() || '🔷';
+  const name = document.getElementById('newName').value.trim();
+  const desc = document.getElementById('newDesc').value.trim();
+  const url  = document.getElementById('newUrl').value.trim();
+
+  if (!name){
+    alert('⚠ Section name is required');
+    return;
+  }
+
+  const btn = this;
+  btn.disabled = true;
+  btn.textContent = '◈ adding...';
+
+  try {
+    const snap = await getDocs(collection(db, 'sections'));
+    let maxOrder = 10;
+    snap.forEach(function(d){
+      const o = d.data().order || 0;
+      if (o > maxOrder) maxOrder = o;
+    });
+
+    await addDoc(collection(db, 'sections'), {
+      icon: icon,
+      name: name,
+      desc: desc,
+      url: url,
+      order: maxOrder + 10,
+      owner: currentUser,
+      createdAt: Date.now()
+    });
+
+    document.getElementById('newIcon').value = '🔷';
+    document.getElementById('newName').value = '';
+    document.getElementById('newDesc').value = '';
+    document.getElementById('newUrl').value = '';
+
+    await renderSections();
+  } catch (e){
+    console.error(e);
+    alert('Failed to add section: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▸ Add Section';
+});
+</script>
+</body>
+</html>
