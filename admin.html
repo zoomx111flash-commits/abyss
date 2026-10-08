@@ -30,10 +30,8 @@
   .back-btn:hover, .logout-btn:hover { background: #ff0000;
     color: #000; box-shadow: 0 0 15px #ff0000; }
 
-  /* ============ GATE ============ */
   #gateView { position: fixed; inset: 0; z-index: 5;
-    display: flex; align-items: center; justify-content: center;
-    padding: 1rem; }
+    display: flex; align-items: center; justify-content: center; padding: 1rem; }
   #gateView.hidden { display: none; }
   .gate-card { background: rgba(10,0,0,0.9); backdrop-filter: blur(15px);
     border: 1px solid #ff0000; border-radius: 20px;
@@ -49,8 +47,8 @@
     40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)} }
   .shake { animation: shake 0.5s ease-in-out; }
 
-  .gate-icon { font-size: 3rem; margin-bottom: 1rem;
-    display: block; text-shadow: 0 0 20px #ff0000; }
+  .gate-icon { font-size: 3rem; margin-bottom: 1rem; display: block;
+    text-shadow: 0 0 20px #ff0000; }
   .gate-title { font-size: 1rem; letter-spacing: 4px; color: #ff1a1a;
     text-transform: uppercase; margin-bottom: 0.5rem;
     text-shadow: 0 0 10px #ff0000; }
@@ -63,8 +61,8 @@
     margin-bottom: 1rem; transition: all 0.3s; }
   .gate-input:focus { border-color: #ff0000;
     box-shadow: 0 0 20px rgba(255,0,0,0.6); }
-  .gate-btn { width: 100%; padding: 0.9rem; font-size: 0.9rem;
-    font-weight: 700; border: none; border-radius: 8px;
+  .gate-btn { width: 100%; padding: 0.9rem; font-size: 0.9rem; font-weight: 700;
+    border: none; border-radius: 8px;
     background: linear-gradient(135deg, #8b0000, #ff0000, #8b0000);
     background-size: 200% 200%; color: white; cursor: pointer;
     letter-spacing: 3px; text-transform: uppercase;
@@ -75,10 +73,9 @@
   @keyframes gradientShift { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
   .gate-btn:hover { box-shadow: 0 0 40px rgba(255,0,0,1); }
   .gate-btn:disabled { opacity: 0.5; cursor: wait; }
-  .gate-msg { margin-top: 1rem; font-size: 0.75rem;
-    min-height: 1.5rem; color: #ff6666; letter-spacing: 1px; }
+  .gate-msg { margin-top: 1rem; font-size: 0.75rem; min-height: 1.5rem;
+    color: #ff6666; letter-spacing: 1px; }
 
-  /* ============ COMMAND VIEW ============ */
   .card { background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
     border: 1px solid #ff0000; border-radius: 12px;
     padding: 1.2rem; box-shadow: 0 0 20px rgba(255,0,0,0.2);
@@ -132,9 +129,10 @@
     color: #ff6666; border-radius: 4px; cursor: pointer;
     font-family: inherit; letter-spacing: 1px; }
   .user-row .u-kick:hover { background: #ff0000; color: #000; }
-  .user-row.kicked { border-color: #00ff44; }
-  .user-row.kicked .u-kick { border-color: #00ff44; color: #00ff88; }
-  .user-row.kicked .u-kick:hover { background: #00ff44; color: #000; }
+  .user-row.suspended { border-color: #ffaa00;
+    box-shadow: 0 0 15px rgba(255,170,0,0.4); }
+  .user-row.suspended .u-kick { border-color: #00ff44; color: #00ff88; }
+  .user-row.suspended .u-kick:hover { background: #00ff44; color: #000; }
 
   .modal-bg { display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,0.9); z-index: 200;
@@ -218,19 +216,19 @@
       </button>
       <button class="cmd-btn danger" id="cmdLockAbyss">
         <span class="ico">⛓</span>
-        <span class="txt">Lock The Abyss<small>kick everyone (except Devil-0)</small></span>
+        <span class="txt">Lock The Abyss<small>block everyone (except Devil-0)</small></span>
       </button>
       <button class="cmd-btn success" id="cmdUnlockAbyss">
         <span class="ico">🔓</span>
         <span class="txt">Unlock The Abyss<small>allow everyone back in</small></span>
       </button>
-      <button class="cmd-btn danger" id="cmdKickUser">
-        <span class="ico">🚪</span>
-        <span class="txt">Kick User<small>expel a specific operator</small></span>
+      <button class="cmd-btn danger" id="cmdSuspendUser">
+        <span class="ico">🚫</span>
+        <span class="txt">Suspend User<small>hide all sections from user</small></span>
       </button>
-      <button class="cmd-btn success" id="cmdUnkickUser">
+      <button class="cmd-btn success" id="cmdUnsuspendUser">
         <span class="ico">↩</span>
-        <span class="txt">Allow User Back<small>restore an expelled operator</small></span>
+        <span class="txt">Unsuspend User<small>restore a suspended user</small></span>
       </button>
     </div>
   </div>
@@ -270,14 +268,9 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 const ADMIN_USER = "Devil-0";
-
-/* ============================================================
-   🔑 رمز الدخول للأدمن — 2133
-   أي شخص يعرفه يقدر يدخل قسم الأوامر
-   ============================================================ */
 const SECRET_CODE = "2133";
 
-/* ---------- Matrix BG ---------- */
+/* Matrix BG */
 const canvas = document.getElementById('matrixCanvas');
 const ctx = canvas.getContext('2d');
 function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
@@ -298,7 +291,7 @@ setInterval(function(){
   }
 }, 50);
 
-/* ---------- Toast ---------- */
+/* Toast */
 const toast = document.getElementById('toast');
 let toastTimer;
 function showToast(msg, type){
@@ -308,7 +301,7 @@ function showToast(msg, type){
   toastTimer = setTimeout(function(){ toast.className = (type || ''); }, 2500);
 }
 
-/* ---------- Auth ---------- */
+/* Auth */
 let currentUser = null;
 
 onAuthStateChanged(auth, function(user){
@@ -316,7 +309,6 @@ onAuthStateChanged(auth, function(user){
     window.location.replace('index.html');
     return;
   }
-  // ✅ خذ المستخدم بالشكل الصحيح
   const stored = sessionStorage.getItem('abyss_user');
   if (stored){
     currentUser = stored;
@@ -333,7 +325,7 @@ document.getElementById('logoutBtn').addEventListener('click', async function(){
   window.location.replace('index.html');
 });
 
-/* ---------- Gate ---------- */
+/* Gate */
 const gateView = document.getElementById('gateView');
 const gateCard = document.getElementById('gateCard');
 const gateInput = document.getElementById('gateInput');
@@ -361,14 +353,12 @@ function tryUnlock(){
     shakeGate();
     return;
   }
-
   gateBtn.disabled = true;
   gateMsg.style.color = '#ff6666';
   gateMsg.textContent = '◈ verifying...';
 
   setTimeout(function(){
     gateBtn.disabled = false;
-
     if (code === SECRET_CODE){
       gateMsg.style.color = '#00ff88';
       gateMsg.textContent = '✓ access granted';
@@ -388,22 +378,21 @@ gateInput.addEventListener('keypress', function(e){
   if (e.key === 'Enter'){ e.preventDefault(); tryUnlock(); }
 });
 
-/* ✅ إذا سبق وفتح الرمز في هذه الجلسة، ادخل مباشرة */
 if (sessionStorage.getItem('abyss_admin_unlocked') === 'ok'){
   setTimeout(unlockApp, 100);
 } else {
   setTimeout(function(){ gateInput.focus(); }, 300);
 }
 
-/* ---------- Settings ---------- */
+/* Settings */
 async function loadSettings(){
   try {
     const snap = await getDoc(doc(db, 'settings', 'global'));
     if (snap.exists()) return snap.data();
-    return { locked: false, kicked: [] };
+    return { locked: false, suspended: [] };
   } catch (e){
     console.error(e);
-    return { locked: false, kicked: [] };
+    return { locked: false, suspended: [] };
   }
 }
 
@@ -415,14 +404,13 @@ async function saveSettings(data){
   }
 }
 
-/* ---------- Refresh ---------- */
+/* Refresh */
 const lockStatus = document.getElementById('lockStatus');
 const userList = document.getElementById('userList');
 
 async function refreshAll(){
   const settings = await loadSettings();
 
-  // Lock status
   if (settings.locked){
     lockStatus.textContent = '⛓ LOCKED';
     lockStatus.classList.add('locked');
@@ -431,20 +419,19 @@ async function refreshAll(){
     lockStatus.classList.remove('locked');
   }
 
-  // Users
   try {
     const snap = await getDocs(collection(db, 'accounts'));
     userList.innerHTML = '';
-    const kicked = settings.kicked || [];
+    const suspended = settings.suspended || [];
 
     snap.forEach(function(d){
       const data = d.data();
       const k = data.username || d.id;
-      const isKicked = kicked.indexOf(k) !== -1;
+      const isSuspended = suspended.indexOf(k) !== -1;
 
       const row = document.createElement('div');
       row.className = 'user-row';
-      if (isKicked) row.classList.add('kicked');
+      if (isSuspended) row.classList.add('suspended');
       if (k === ADMIN_USER){
         row.style.borderColor = '#ff0000';
         row.style.boxShadow = '0 0 15px rgba(255,0,0,0.5)';
@@ -467,19 +454,19 @@ async function refreshAll(){
         kickBtn.style.opacity = 0.5;
         kickBtn.style.cursor = 'not-allowed';
       } else {
-        kickBtn.textContent = isKicked ? '↩ ALLOW' : '🚪 KICK';
+        kickBtn.textContent = isSuspended ? '↩ UNSUSPEND' : '🚫 SUSPEND';
         kickBtn.addEventListener('click', (function(userK){
           return async function(){
             const s = await loadSettings();
-            const arr = s.kicked || [];
+            const arr = s.suspended || [];
             if (arr.indexOf(userK) !== -1){
-              s.kicked = arr.filter(function(x){ return x !== userK; });
+              s.suspended = arr.filter(function(x){ return x !== userK; });
               await saveSettings(s);
-              showToast(userK + ' allowed back', 'success');
+              showToast(userK + ' unsuspended', 'success');
             } else {
-              s.kicked = arr.concat([userK]);
+              s.suspended = arr.concat([userK]);
               await saveSettings(s);
-              showToast(userK + ' kicked', 'error');
+              showToast(userK + ' suspended', 'error');
             }
             await refreshAll();
           };
@@ -501,7 +488,7 @@ async function refreshAll(){
   }
 }
 
-/* ---------- Modal ---------- */
+/* Modal */
 const modalBg = document.getElementById('modalBg');
 const modalContent = document.getElementById('modalContent');
 function openModal(html){
@@ -516,7 +503,7 @@ modalBg.addEventListener('click', function(e){
   if (e.target === modalBg) closeModal();
 });
 
-/* ---------- COMMANDS ---------- */
+/* COMMANDS */
 
 // Wipe chat
 document.getElementById('cmdWipeChat').addEventListener('click', function(){
@@ -552,7 +539,7 @@ document.getElementById('cmdLockAbyss').addEventListener('click', function(){
   openModal(
     '<h3>⛓ Lock The Abyss</h3>' +
     '<p style="color:#ff6666;font-size:0.8rem;text-align:center;line-height:1.5;">' +
-    'Everyone except <b>Devil-0</b> will be kicked out.</p>' +
+    'Everyone except <b>Devil-0</b> will be blocked.</p>' +
     '<div class="modal-btns">' +
     '<button class="cancel" id="mxCancel">Cancel</button>' +
     '<button class="ok" id="confirmLock">⛓ Lock</button>' +
@@ -578,20 +565,20 @@ document.getElementById('cmdUnlockAbyss').addEventListener('click', async functi
   showToast('the abyss is now OPEN', 'success');
 });
 
-// Kick user
-document.getElementById('cmdKickUser').addEventListener('click', async function(){
+// Suspend user
+document.getElementById('cmdSuspendUser').addEventListener('click', async function(){
   const snap = await getDocs(collection(db, 'accounts'));
   const settings = await loadSettings();
-  const kicked = settings.kicked || [];
+  const suspended = settings.suspended || [];
 
   const avail = [];
   snap.forEach(function(d){
     const k = d.data().username || d.id;
-    if (k !== ADMIN_USER && kicked.indexOf(k) === -1) avail.push(k);
+    if (k !== ADMIN_USER && suspended.indexOf(k) === -1) avail.push(k);
   });
 
   if (!avail.length){
-    showToast('no users to kick', 'error');
+    showToast('no users to suspend', 'error');
     return;
   }
 
@@ -600,58 +587,60 @@ document.getElementById('cmdKickUser').addEventListener('click', async function(
   }).join('');
 
   openModal(
-    '<h3>🚪 Kick User</h3>' +
+    '<h3>🚫 Suspend User</h3>' +
     '<label>Select Operator</label>' +
-    '<select id="kickUser">' + options + '</select>' +
+    '<select id="suspendUser">' + options + '</select>' +
+    '<p style="color:#661111;font-size:0.7rem;text-align:center;margin-top:0.8rem;">' +
+    'Suspended users can log in but see NO sections.<br>They will see "Your account is suspended".</p>' +
     '<div class="modal-btns">' +
     '<button class="cancel" id="mxCancel">Cancel</button>' +
-    '<button class="ok" id="confirmKick">🚪 Kick</button>' +
+    '<button class="ok" id="confirmSuspend">🚫 Suspend</button>' +
     '</div>'
   );
   document.getElementById('mxCancel').addEventListener('click', closeModal);
-  document.getElementById('confirmKick').addEventListener('click', async function(){
-    const u = document.getElementById('kickUser').value;
+  document.getElementById('confirmSuspend').addEventListener('click', async function(){
+    const u = document.getElementById('suspendUser').value;
     const s = await loadSettings();
-    const arr = s.kicked || [];
-    if (arr.indexOf(u) === -1) s.kicked = arr.concat([u]);
+    const arr = s.suspended || [];
+    if (arr.indexOf(u) === -1) s.suspended = arr.concat([u]);
     await saveSettings(s);
     closeModal();
     await refreshAll();
-    showToast(u + ' kicked from the abyss', 'error');
+    showToast(u + ' suspended', 'error');
   });
 });
 
-// Unkick user
-document.getElementById('cmdUnkickUser').addEventListener('click', async function(){
+// Unsuspend user
+document.getElementById('cmdUnsuspendUser').addEventListener('click', async function(){
   const s = await loadSettings();
-  const kicked = s.kicked || [];
-  if (!kicked.length){
-    showToast('no kicked users', 'error');
+  const suspended = s.suspended || [];
+  if (!suspended.length){
+    showToast('no suspended users', 'error');
     return;
   }
 
-  const options = kicked.map(function(u){
+  const options = suspended.map(function(u){
     return '<option value="' + u + '">' + u + '</option>';
   }).join('');
 
   openModal(
-    '<h3>↩ Allow User Back</h3>' +
-    '<label>Select Kicked Operator</label>' +
-    '<select id="unkickUser">' + options + '</select>' +
+    '<h3>↩ Unsuspend User</h3>' +
+    '<label>Select Suspended Operator</label>' +
+    '<select id="unsuspendUser">' + options + '</select>' +
     '<div class="modal-btns">' +
     '<button class="cancel" id="mxCancel">Cancel</button>' +
-    '<button class="ok" id="confirmUnkick">↩ Allow</button>' +
+    '<button class="ok" id="confirmUnsuspend">↩ Unsuspend</button>' +
     '</div>'
   );
   document.getElementById('mxCancel').addEventListener('click', closeModal);
-  document.getElementById('confirmUnkick').addEventListener('click', async function(){
-    const u = document.getElementById('unkickUser').value;
-    const s = await loadSettings();
-    s.kicked = (s.kicked || []).filter(function(x){ return x !== u; });
-    await saveSettings(s);
+  document.getElementById('confirmUnsuspend').addEventListener('click', async function(){
+    const u = document.getElementById('unsuspendUser').value;
+    const s2 = await loadSettings();
+    s2.suspended = (s2.suspended || []).filter(function(x){ return x !== u; });
+    await saveSettings(s2);
     closeModal();
     await refreshAll();
-    showToast(u + ' allowed back', 'success');
+    showToast(u + ' unsuspended', 'success');
   });
 });
 </script>
