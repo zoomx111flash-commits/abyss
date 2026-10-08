@@ -7,34 +7,23 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<script src="theme.js"></script>
+
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
   html, body { height: 100%; }
 
-  :root {
-    --bg: #030308;
-    --card: rgba(10, 10, 18, 0.65);
-    --card-solid: rgba(12, 12, 22, 0.92);
-    --border: rgba(255, 30, 60, 0.25);
-    --border-hover: rgba(255, 30, 60, 0.65);
-    --red: #ff1e3c;
-    --red-2: #ff5570;
-    --red-glow: rgba(255, 30, 60, 0.6);
-    --text: #ebebf5;
-    --text-dim: #70707f;
-    --text-mute: #3a3a48;
-    --success: #00ff88;
-  }
-
   body {
-    background: var(--bg);
-    color: var(--text);
+    background: var(--bg, #030308);
+    color: var(--text, #ebebf5);
     min-height: 100vh;
     overflow-x: hidden;
     padding: 1.5rem;
+    transition: background 0.4s, color 0.4s;
     background-image:
-      radial-gradient(circle at 15% 20%, rgba(255, 30, 60, 0.12) 0%, transparent 45%),
-      radial-gradient(circle at 85% 80%, rgba(150, 0, 255, 0.08) 0%, transparent 45%);
+      radial-gradient(circle at 15% 20%, var(--primary-glow, rgba(255,30,60,0.12)) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, var(--primary-glow, rgba(255,30,60,0.08)) 0%, transparent 45%);
   }
 
   .bg-layer {
@@ -43,12 +32,12 @@
     z-index: 0;
     pointer-events: none;
     background-image:
-      linear-gradient(rgba(255, 30, 60, 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 30, 60, 0.04) 1px, transparent 1px);
+      linear-gradient(var(--border, rgba(255,30,60,0.04)) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border, rgba(255,30,60,0.04)) 1px, transparent 1px);
     background-size: 60px 60px;
     mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
     -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
-    opacity: 0.8;
+    opacity: 0.6;
   }
 
   #matrixCanvas {
@@ -75,12 +64,12 @@
     justify-content: space-between;
     padding: 1rem 1.5rem;
     margin-bottom: 1.5rem;
-    background: var(--card);
+    background: var(--card, rgba(10,10,18,0.65));
     backdrop-filter: blur(12px) saturate(140%);
     -webkit-backdrop-filter: blur(12px) saturate(140%);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
     border-radius: 16px;
-    box-shadow: 0 20px 60px -20px rgba(255, 30, 60, 0.3);
+    box-shadow: 0 20px 60px -20px var(--primary-glow, rgba(255,30,60,0.3));
     flex-wrap: wrap;
     gap: 1rem;
     position: relative;
@@ -92,7 +81,7 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    background: linear-gradient(90deg, transparent, var(--primary, #ff1e3c), transparent);
     animation: topLine 5s linear infinite;
   }
   @keyframes topLine {
@@ -112,31 +101,33 @@
     font-weight: 900;
     letter-spacing: 4px;
     text-transform: uppercase;
-    color: var(--text);
-    text-shadow: 0 0 15px var(--red-glow);
+    color: var(--text, #ebebf5);
+    text-shadow: 0 0 15px var(--primary-glow, rgba(255,30,60,0.6));
   }
 
-  .back-btn, .logout-btn {
+  .back-btn, .icon-btn, .logout-btn {
     padding: 0.5rem 1rem;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
     border-radius: 20px;
     background: transparent;
-    color: var(--text-dim);
+    color: var(--text-dim, #70707f);
     cursor: pointer;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.68rem;
     letter-spacing: 2px;
     text-transform: uppercase;
     text-decoration: none;
-    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    transition: all 0.25s;
     display: flex;
     align-items: center;
     gap: 0.4rem;
   }
-  .back-btn:hover, .logout-btn:hover {
-    background: var(--red);
+  .icon-btn { width: 40px; justify-content: center; padding: 0.5rem; }
+
+  .back-btn:hover, .icon-btn:hover, .logout-btn:hover {
+    background: var(--primary, #ff1e3c);
     color: #000;
-    border-color: var(--red);
+    border-color: var(--primary, #ff1e3c);
   }
 
   .user-badge {
@@ -144,46 +135,33 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    border: 1px solid var(--border);
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
     border-radius: 20px;
     background: rgba(255, 30, 60, 0.08);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--text);
+    color: var(--text, #ebebf5);
   }
-
   .user-badge::before {
     content: '';
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--red);
-    box-shadow: 0 0 8px var(--red);
-  }
-
-  .user-badge.admin {
-    background: rgba(255, 30, 60, 0.2);
-    border-color: var(--red);
-  }
-
-  .user-badge.admin::before {
-    background: var(--success);
-    box-shadow: 0 0 8px var(--success);
+    background: var(--primary, #ff1e3c);
+    box-shadow: 0 0 8px var(--primary, #ff1e3c);
   }
 
   /* ============ CARD ============ */
   .card {
-    background: var(--card);
+    background: var(--card, rgba(10,10,18,0.65));
     backdrop-filter: blur(12px) saturate(140%);
     -webkit-backdrop-filter: blur(12px) saturate(140%);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
     border-radius: 16px;
     padding: 1.5rem;
-    box-shadow: 0 20px 60px -20px rgba(255, 30, 60, 0.2);
-    position: relative;
-    overflow: hidden;
+    box-shadow: 0 20px 60px -20px var(--primary-glow, rgba(255,30,60,0.2));
   }
 
   .card-title {
@@ -195,11 +173,11 @@
     font-size: 0.75rem;
     letter-spacing: 3px;
     text-transform: uppercase;
-    color: var(--red);
+    color: var(--primary, #ff1e3c);
     font-weight: 700;
     padding-bottom: 1rem;
     margin-bottom: 1.25rem;
-    border-bottom: 1px solid rgba(255, 30, 60, 0.15);
+    border-bottom: 1px solid var(--border, rgba(255,30,60,0.15));
     flex-wrap: wrap;
   }
 
@@ -209,10 +187,10 @@
     gap: 0.4rem;
     padding: 0.3rem 0.75rem;
     background: rgba(255, 30, 60, 0.08);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
     border-radius: 20px;
     font-size: 0.65rem;
-    color: var(--text-dim);
+    color: var(--text-dim, #70707f);
     letter-spacing: 1.5px;
     font-weight: 400;
     text-transform: none;
@@ -231,7 +209,7 @@
     gap: 1rem;
     padding: 1rem 1.25rem;
     background: rgba(5, 5, 12, 0.5);
-    border: 1px solid var(--border);
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
     border-radius: 12px;
     transition: all 0.25s;
     flex-wrap: wrap;
@@ -246,26 +224,28 @@
     left: 0;
     width: 3px;
     height: 0;
-    background: var(--red);
+    background: var(--primary, #ff1e3c);
     transition: height 0.3s;
   }
+
+  [dir="rtl"] .user-row::before { left: auto; right: 0; }
 
   .user-row:hover::before { height: 100%; }
 
   .user-row:hover {
-    border-color: var(--border-hover);
+    border-color: var(--border-hover, rgba(255,30,60,0.65));
     background: rgba(255, 30, 60, 0.04);
-    box-shadow: 0 0 25px rgba(255, 30, 60, 0.15);
+    box-shadow: 0 0 25px var(--primary-glow, rgba(255,30,60,0.15));
   }
 
   .user-row.owner {
-    border-color: var(--red);
+    border-color: var(--primary, #ff1e3c);
     background: rgba(255, 30, 60, 0.06);
-    box-shadow: 0 0 25px rgba(255, 30, 60, 0.2);
+    box-shadow: 0 0 25px var(--primary-glow, rgba(255,30,60,0.2));
   }
 
   .user-row.owner::before {
-    background: var(--success);
+    background: var(--success, #00ff88);
   }
 
   .user-avatar {
@@ -279,15 +259,15 @@
     font-size: 1.2rem;
     font-weight: 700;
     background: linear-gradient(135deg, rgba(255, 30, 60, 0.15), rgba(255, 30, 60, 0.05));
-    border: 1px solid var(--border);
-    color: var(--red);
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
+    color: var(--primary, #ff1e3c);
     flex-shrink: 0;
-    text-shadow: 0 0 10px var(--red-glow);
+    text-shadow: 0 0 10px var(--primary-glow, rgba(255,30,60,0.6));
   }
 
   .user-row.owner .user-avatar {
-    border-color: var(--success);
-    color: var(--success);
+    border-color: var(--success, #00ff88);
+    color: var(--success, #00ff88);
     text-shadow: 0 0 10px rgba(0, 255, 136, 0.6);
     background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 255, 136, 0.05));
   }
@@ -302,7 +282,7 @@
     font-size: 0.9rem;
     font-weight: 700;
     letter-spacing: 1.5px;
-    color: var(--red);
+    color: var(--primary, #ff1e3c);
     margin-bottom: 0.3rem;
     display: flex;
     align-items: center;
@@ -310,22 +290,22 @@
   }
 
   .user-row.owner .user-name {
-    color: var(--success);
+    color: var(--success, #00ff88);
   }
 
   .user-name .crown {
     font-size: 0.85rem;
-    filter: drop-shadow(0 0 5px var(--success));
+    filter: drop-shadow(0 0 5px var(--success, #00ff88));
   }
 
   .user-real {
     font-size: 0.82rem;
-    color: var(--text);
+    color: var(--text, #ebebf5);
     letter-spacing: 0.5px;
   }
 
   .user-real.empty {
-    color: var(--text-mute);
+    color: var(--text-mute, #3a3a48);
     font-style: italic;
   }
 
@@ -343,36 +323,36 @@
     letter-spacing: 2px;
     text-transform: uppercase;
     background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
+    color: var(--text-dim, #70707f);
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s;
   }
 
   .user-edit:hover {
-    background: var(--red);
+    background: var(--primary, #ff1e3c);
     color: #fff;
-    border-color: var(--red);
-    box-shadow: 0 0 20px rgba(255, 30, 60, 0.5);
+    border-color: var(--primary, #ff1e3c);
+    box-shadow: 0 0 20px var(--primary-glow, rgba(255,30,60,0.5));
   }
 
   .user-edit.locked {
-    color: var(--text-mute);
-    border-color: rgba(255, 30, 60, 0.1);
+    color: var(--text-mute, #3a3a48);
+    border-color: var(--border, rgba(255,30,60,0.1));
     cursor: not-allowed;
   }
 
   .user-edit.locked:hover {
     background: transparent;
-    color: var(--text-mute);
-    border-color: rgba(255, 30, 60, 0.1);
+    color: var(--text-mute, #3a3a48);
+    border-color: var(--border, rgba(255,30,60,0.1));
     box-shadow: none;
   }
 
   .empty-msg {
     text-align: center;
-    color: var(--text-mute);
+    color: var(--text-mute, #3a3a48);
     padding: 3rem 1rem;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.8rem;
@@ -396,11 +376,11 @@
   .modal {
     width: 100%;
     max-width: 440px;
-    background: var(--card-solid);
-    border: 1px solid var(--border);
+    background: var(--card-solid, rgba(12,12,22,0.92));
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
     border-radius: 20px;
     padding: 2rem;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset, 0 32px 80px -20px rgba(255, 30, 60, 0.4);
+    box-shadow: 0 32px 80px -20px var(--primary-glow, rgba(255,30,60,0.4));
     position: relative;
     overflow: hidden;
   }
@@ -410,7 +390,7 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     height: 2px;
-    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    background: linear-gradient(90deg, transparent, var(--primary, #ff1e3c), transparent);
   }
 
   .modal h3 {
@@ -418,10 +398,10 @@
     font-weight: 900;
     letter-spacing: 4px;
     text-transform: uppercase;
-    color: var(--red);
+    color: var(--primary, #ff1e3c);
     text-align: center;
     margin-bottom: 1.5rem;
-    text-shadow: 0 0 15px var(--red-glow);
+    text-shadow: 0 0 15px var(--primary-glow, rgba(255,30,60,0.6));
   }
 
   .modal label {
@@ -430,14 +410,14 @@
     font-size: 0.65rem;
     letter-spacing: 2px;
     text-transform: uppercase;
-    color: var(--text-dim);
+    color: var(--text-dim, #70707f);
     margin-bottom: 0.4rem;
     margin-top: 1rem;
   }
 
   .modal label::before {
     content: '› ';
-    color: var(--red);
+    color: var(--primary, #ff1e3c);
     font-weight: 700;
   }
 
@@ -445,9 +425,9 @@
     width: 100%;
     padding: 0.85rem 1rem;
     background: rgba(5, 5, 12, 0.6);
-    border: 1px solid rgba(255, 30, 60, 0.2);
+    border: 1px solid var(--border, rgba(255,30,60,0.2));
     border-radius: 10px;
-    color: var(--text);
+    color: var(--text, #ebebf5);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.88rem;
     outline: none;
@@ -455,18 +435,13 @@
   }
 
   .modal input:focus {
-    border-color: var(--border-hover);
-    box-shadow: 0 0 0 3px rgba(255, 30, 60, 0.08);
+    border-color: var(--border-hover, rgba(255,30,60,0.65));
+    box-shadow: 0 0 0 3px var(--primary-glow, rgba(255,30,60,0.1));
   }
 
   .modal input:disabled {
     opacity: 0.6;
     cursor: not-allowed;
-  }
-
-  .modal input::placeholder {
-    color: var(--text-mute);
-    font-weight: 300;
   }
 
   .modal-btns {
@@ -489,29 +464,21 @@
   }
 
   .modal-btns .ok {
-    background: linear-gradient(135deg, #ff1e3c 0%, #cc0022 100%);
+    background: linear-gradient(135deg, var(--primary, #ff1e3c) 0%, var(--primary-2, #cc0022) 100%);
     color: #fff;
-    border: 1px solid var(--red);
-    box-shadow: 0 4px 20px rgba(255, 30, 60, 0.4);
+    border: 1px solid var(--primary, #ff1e3c);
+    box-shadow: 0 4px 20px var(--primary-glow, rgba(255,30,60,0.4));
   }
-  .modal-btns .ok:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(255, 30, 60, 0.6);
-  }
-  .modal-btns .ok:disabled {
-    opacity: 0.5;
-    cursor: wait;
-    transform: none;
-  }
+  .modal-btns .ok:hover { transform: translateY(-2px); }
 
   .modal-btns .cancel {
     background: transparent;
-    color: var(--text-dim);
-    border: 1px solid var(--border);
+    color: var(--text-dim, #70707f);
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
   }
   .modal-btns .cancel:hover {
-    border-color: var(--red);
-    color: var(--red);
+    border-color: var(--primary, #ff1e3c);
+    color: var(--primary, #ff1e3c);
   }
 
   /* ============ TOAST ============ */
@@ -521,28 +488,23 @@
     left: 50%;
     transform: translateX(-50%) translateY(-100px);
     padding: 0.9rem 1.75rem;
-    background: var(--card-solid);
-    border: 1px solid var(--red);
+    background: var(--card-solid, rgba(12,12,22,0.92));
+    border: 1px solid var(--primary, #ff1e3c);
     border-radius: 12px;
-    color: var(--text);
+    color: var(--text, #ebebf5);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.78rem;
     letter-spacing: 1.5px;
     text-transform: uppercase;
     z-index: 500;
     transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 0 30px rgba(255, 30, 60, 0.5);
+    box-shadow: 0 0 30px var(--primary-glow, rgba(255,30,60,0.5));
   }
   #toast.show { transform: translateX(-50%) translateY(0); }
   #toast.success {
-    border-color: var(--success);
-    color: var(--success);
+    border-color: var(--success, #00ff88);
+    color: var(--success, #00ff88);
     box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
-  }
-  #toast.error {
-    border-color: var(--red);
-    color: var(--red);
-    box-shadow: 0 0 30px rgba(255, 30, 60, 0.5);
   }
 
   /* ============ MOBILE ============ */
@@ -555,6 +517,9 @@
     .user-actions { justify-content: flex-end; }
     .user-edit { width: 100%; text-align: center; }
   }
+
+  [dir="rtl"] .top-bar-left { flex-direction: row-reverse; }
+  [dir="rtl"] .top-bar-right { flex-direction: row-reverse; }
 </style>
 </head>
 <body>
@@ -565,22 +530,23 @@
 <div id="app">
   <div class="top-bar">
     <div class="top-bar-left">
-      <a class="back-btn" href="dashboard.html">← Back</a>
-      <h2>◈ Account Registry</h2>
+      <a class="back-btn" href="dashboard.html">← <span data-i18n="common.back">Back</span></a>
+      <h2 data-i18n="accounts.title">Account Registry</h2>
     </div>
     <div class="top-bar-right">
       <span class="user-badge" id="userBadge">—</span>
-      <button class="logout-btn" id="logoutBtn">⏻ Exit</button>
+      <a class="icon-btn" href="settings.html" title="Settings">⚙</a>
+      <button class="logout-btn" id="logoutBtn">⏻ <span data-i18n="dash.exit">Exit</span></button>
     </div>
   </div>
 
   <div class="card">
     <div class="card-title">
-      <span>👤 Operators</span>
+      <span data-i18n="accounts.operators">👤 Operators</span>
       <span class="count-badge" id="countBadge">0 accounts</span>
     </div>
     <div class="user-list" id="userList">
-      <div class="empty-msg">◈ Loading operators... ◈</div>
+      <div class="empty-msg" data-i18n="chat.loading">◈ Loading... ◈</div>
     </div>
   </div>
 </div>
@@ -590,6 +556,8 @@
 </div>
 
 <div id="toast"></div>
+
+<script src="lang.js"></script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -615,7 +583,10 @@ const db = getFirestore(app);
 
 const ADMIN_USER = "Devil-0";
 
-/* ============ MATRIX RAIN (30 FPS) ============ */
+let currentUser = null;
+let isAdmin = false;
+
+/* ============ MATRIX RAIN ============ */
 const mc = document.getElementById('matrixCanvas');
 const mctx = mc.getContext('2d');
 let mcWidth, mcHeight, matrixCols, matrixDrops;
@@ -645,16 +616,26 @@ function drawMatrix(now){
   if (now - lastMatrixTime < MATRIX_INTERVAL) return;
   lastMatrixTime = now;
 
-  mctx.fillStyle = 'rgba(3, 3, 8, 0.08)';
+  mctx.fillStyle = 'rgba(0, 0, 0, 0.08)';
   mctx.fillRect(0, 0, mcWidth, mcHeight);
   mctx.font = matrixFontSize + 'px JetBrains Mono, monospace';
+
+  const theme = window.AbyssTheme ? window.AbyssTheme.get() : 'abyss';
+  const primaryColors = {
+    abyss: '#ff1e3c',
+    matrix: '#00ff41',
+    ice: '#00c8ff',
+    void: '#b400ff',
+    stealth: '#a0a0a0'
+  };
+  const color = primaryColors[theme] || '#ff1e3c';
 
   for (let i = 0; i < matrixDrops.length; i++){
     const text = matrixChars[Math.floor(Math.random() * matrixChars.length)];
     const x = i * matrixFontSize;
     const y = matrixDrops[i] * matrixFontSize;
 
-    mctx.fillStyle = Math.random() > 0.985 ? '#ffffff' : '#ff1e3c';
+    mctx.fillStyle = Math.random() > 0.985 ? '#ffffff' : color;
     mctx.fillText(text, x, y);
 
     if (y > mcHeight && Math.random() > 0.975) matrixDrops[i] = 0;
@@ -674,9 +655,6 @@ function showToast(msg, type){
 }
 
 /* ============ AUTH ============ */
-let currentUser = null;
-let isAdmin = false;
-
 onAuthStateChanged(auth, async function(user){
   if (!user){
     window.location.replace('index.html');
@@ -693,7 +671,6 @@ onAuthStateChanged(auth, async function(user){
 
   const badge = document.getElementById('userBadge');
   badge.textContent = currentUser + (isAdmin ? ' ★' : '');
-  if (isAdmin) badge.classList.add('admin');
 
   await refreshAll();
 });
@@ -721,18 +698,19 @@ async function refreshAll(){
       });
     });
 
-    // Sort: Devil-0 first, then by number
     accounts.sort(function(a, b){
       if (a.username.toLowerCase() === ADMIN_USER.toLowerCase()) return -1;
       if (b.username.toLowerCase() === ADMIN_USER.toLowerCase()) return 1;
       return a.username.localeCompare(b.username);
     });
 
+    const t = window.AbyssLang ? window.AbyssLang.t : function(k){ return k; };
+
     document.getElementById('countBadge').textContent =
-      accounts.length + ' account' + (accounts.length === 1 ? '' : 's');
+      accounts.length + ' ' + (t('accounts.accounts') || 'accounts');
 
     if (!accounts.length){
-      userList.innerHTML = '<div class="empty-msg">◈ No operators found ◈</div>';
+      userList.innerHTML = '<div class="empty-msg">' + (t('files.no_files') || 'No operators') + '</div>';
       return;
     }
 
@@ -743,12 +721,10 @@ async function refreshAll(){
       row.className = 'user-row';
       if (isOwner) row.classList.add('owner');
 
-      // Avatar with first letter
       const avatar = document.createElement('div');
       avatar.className = 'user-avatar';
       avatar.textContent = acc.username.charAt(0).toUpperCase();
 
-      // Details
       const details = document.createElement('div');
       details.className = 'user-details';
 
@@ -759,12 +735,11 @@ async function refreshAll(){
 
       const realEl = document.createElement('div');
       realEl.className = 'user-real' + (acc.realName ? '' : ' empty');
-      realEl.textContent = acc.realName || '(no name set)';
+      realEl.textContent = acc.realName || t('accounts.no_name');
 
       details.appendChild(nameEl);
       details.appendChild(realEl);
 
-      // Actions
       const actions = document.createElement('div');
       actions.className = 'user-actions';
 
@@ -772,12 +747,12 @@ async function refreshAll(){
       editBtn.className = 'user-edit';
 
       if (isAdmin){
-        editBtn.textContent = acc.realName ? '✎ Edit' : '✎ Set';
+        editBtn.textContent = '✎ ' + (acc.realName ? t('accounts.edit') : t('accounts.set'));
         editBtn.addEventListener('click', function(){
           openEditModal(acc);
         });
       } else {
-        editBtn.textContent = '🔒 View';
+        editBtn.textContent = '🔒 ' + t('accounts.view');
         editBtn.classList.add('locked');
         editBtn.disabled = true;
       }
@@ -791,8 +766,6 @@ async function refreshAll(){
     });
   } catch (e){
     console.error(e);
-    document.getElementById('userList').innerHTML =
-      '<div class="empty-msg">⚠ Failed to load operators</div>';
   }
 }
 
@@ -819,16 +792,18 @@ modalBg.addEventListener('click', function(e){
 });
 
 function openEditModal(acc){
+  const t = window.AbyssLang ? window.AbyssLang.t : function(k){ return k; };
+
   openModal(
-    '<h3>✎ Set Real Name</h3>' +
-    '<label>Operator</label>' +
+    '<h3>✎ ' + t('accounts.set_real') + '</h3>' +
+    '<label>' + t('accounts.operators') + '</label>' +
     '<input type="text" value="' + escapeHtml(acc.username) + '" disabled>' +
-    '<label>Real Name</label>' +
+    '<label>' + t('accounts.real_name') + '</label>' +
     '<input type="text" id="realNameInput" placeholder="e.g. محمد" ' +
       'value="' + escapeHtml(acc.realName) + '" autocomplete="off" maxlength="30" spellcheck="false">' +
     '<div class="modal-btns">' +
-    '<button class="cancel" id="mxCancel">Cancel</button>' +
-    '<button class="ok" id="mxSave">💾 Save</button>' +
+    '<button class="cancel" id="mxCancel">' + t('accounts.cancel') + '</button>' +
+    '<button class="ok" id="mxSave">💾 ' + t('accounts.save') + '</button>' +
     '</div>'
   );
 
@@ -838,13 +813,13 @@ function openEditModal(acc){
     const newName = document.getElementById('realNameInput').value.trim();
 
     btn.disabled = true;
-    btn.textContent = '◈ Saving...';
+    btn.textContent = '◈...';
 
     await saveRealName(acc.id, newName);
 
     closeModal();
     await refreshAll();
-    showToast('✓ Name updated for ' + acc.username, 'success');
+    showToast('✓ ' + acc.username + ' — ' + newName, 'success');
   });
 
   setTimeout(function(){
@@ -868,9 +843,12 @@ async function saveRealName(accountId, name){
     }
   } catch (e){
     console.error(e);
-    showToast('Failed: ' + e.message, 'error');
   }
 }
+
+window.addEventListener('langChanged', function(){
+  refreshAll();
+});
 </script>
 </body>
 </html>
