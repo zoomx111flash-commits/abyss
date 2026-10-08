@@ -325,13 +325,17 @@ function renderChat(){
     return;
   }
 
-  allMessages.forEach(function(m){
-    const div = document.createElement('div');
-    div.className = 'chat-msg';
-    let inner = '<div class="header">' +
-                  '<span class="author">' + escapeHtml(m.author) + '</span>' +
-                  '<span class="time">' + formatTime(m.time) + '</span>' +
-                '</div>';
+ allMessages.forEach(function(m){
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  
+  // ✅ جيب الاسم الحقيقي من البيانات
+  const realName = m.realName ? ' · ' + m.realName : '';
+  
+  let inner = '<div class="header">' +
+                '<span class="author">' + escapeHtml(m.author) + escapeHtml(realName) + '</span>' +
+                '<span class="time">' + formatTime(m.time) + '</span>' +
+              '</div>';
     if (m.text){
       inner += '<div class="content">' + escapeHtml(m.text) + '</div>';
     }
@@ -374,8 +378,21 @@ async function sendMessage(){
   chatSend.disabled = true;
 
   try {
+    // ✅ اجلب الاسم الحقيقي من Firestore (مرة واحدة، ويُخزّن)
+    let realName = sessionStorage.getItem('abyss_realname_' + currentUser);
+    if (!realName){
+      try {
+        const accSnap = await getDoc(doc(db, 'accounts', currentUser));
+        if (accSnap.exists() && accSnap.data().realName){
+          realName = accSnap.data().realName;
+          sessionStorage.setItem('abyss_realname_' + currentUser, realName);
+        }
+      } catch(e){}
+    }
+
     await addDoc(collection(db, 'messages'), {
       author: currentUser,
+      realName: realName || '',
       text: text,
       image: pendingImage ? pendingImage.data : null,
       time: Date.now()
