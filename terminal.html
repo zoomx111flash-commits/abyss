@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ABYSS · LINUX TERMINAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<script src="theme.js"></script>
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg, #030308);
+    color: var(--text, #ebebf5);
+    min-height: 100vh;
+    transition: background 0.4s, color 0.4s;
+    background-image:
+      radial-gradient(circle at 15% 20%, var(--primary-glow, rgba(255,30,60,0.12)) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, var(--primary-glow, rgba(255,30,60,0.08)) 0%, transparent 45%);
+  }
+
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(var(--border, rgba(255,30,60,0.04)) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border, rgba(255,30,60,0.04)) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    opacity: 0.6;
+  }
+
+  #matrixCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.15;
+  }
+
+  .terminal-wrapper {
+    position: relative;
+    z-index: 10;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* ============ TOP BAR ============ */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1.25rem;
+    margin-bottom: 1rem;
+    background: var(--card, rgba(10,10,18,0.85));
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
+    border-radius: 16px;
+    box-shadow: 0 20px 60px -20px var(--primary-glow, rgba(255,30,60,0.3));
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .top-bar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--primary, #ff1e3c), transparent);
+    animation: topLine 5s linear infinite;
+  }
+  @keyframes topLine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .top-bar-left, .top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .top-bar h2 {
+    font-size: 0.9rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text, #ebebf5);
+    text-shadow: 0 0 15px var(--primary-glow, rgba(255,30,60,0.6));
+  }
+
+  .top-bar h2 .linux-icon {
+    color: var(--primary, #ff1e3c);
+    margin-right: 0.4rem;
+  }
+
+  .back-btn, .icon-btn, .logout-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text-dim, #70707f);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.25s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: inherit;
+  }
+
+  .icon-btn {
+    width: 40px;
+    justify-content: center;
+    padding: 0.5rem;
+  }
+
+  .back-btn:hover, .icon-btn:hover, .logout-btn:hover {
+    background: var(--primary, #ff1e3c);
+    color: #000;
+    border-color: var(--primary, #ff1e3c);
+  }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
+    border-radius: 20px;
+    background: rgba(0, 255, 136, 0.08);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--success, #00ff88);
+  }
+
+  .status-pill::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--success, #00ff88);
+    box-shadow: 0 0 8px var(--success, #00ff88);
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  /* ============ TERMINAL CONTAINER ============ */
+  .terminal-container {
+    flex: 1;
+    position: relative;
+    background: #000000;
+    border: 1px solid var(--border, rgba(255,30,60,0.25));
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 
+      0 20px 60px -20px var(--primary-glow, rgba(255,30,60,0.4)),
+      inset 0 0 60px rgba(0, 0, 0, 0.9);
+  }
+
+  /* Terminal header (fake mac buttons) */
+  .terminal-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 38px;
+    background: linear-gradient(to bottom, #1a1a1a, #0d0d0d);
+    border-bottom: 1px solid rgba(255, 30, 60, 0.3);
+    display: flex;
+    align-items: center;
+    padding: 0 1rem;
+    gap: 0.5rem;
+    z-index: 5;
+  }
+
+  .mac-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  .mac-dot.red { background: #ff5f56; }
+  .mac-dot.yellow { background: #ffbd2e; }
+  .mac-dot.green { background: #27c93f; }
+
+  .terminal-title {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: #70707f;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ============ IFRAME ============ */
+  #jslinux {
+    position: absolute;
+    top: 38px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: calc(100% - 38px);
+    border: none;
+    background: #000;
+  }
+
+  /* ============ LOADING SCREEN ============ */
+  .loading-screen {
+    position: absolute;
+    top: 38px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1.5rem;
+    background: #000;
+    z-index: 4;
+    transition: opacity 0.5s;
+  }
+
+  .loading-screen.hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .loading-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1rem;
+    color: var(--primary, #ff1e3c);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 0 15px var(--primary-glow, rgba(255,30,60,0.6));
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  .loading-bar {
+    width: 300px;
+    max-width: 80%;
+    height: 4px;
+    background: rgba(255, 30, 60, 0.15);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .loading-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary, #ff1e3c), var(--primary-2, #ff5570));
+    width: 0%;
+    transition: width 0.3s;
+    box-shadow: 0 0 15px var(--primary-glow, rgba(255,30,60,0.6));
+    animation: loadingAnim 3s ease-in-out infinite;
+  }
+
+  @keyframes loadingAnim {
+    0% { width: 5%; }
+    50% { width: 80%; }
+    100% { width: 95%; }
+  }
+
+  .loading-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--text-mute, #3a3a48);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1.8;
+    max-width: 400px;
+    padding: 0 1rem;
+  }
+
+  .loading-text .highlight {
+    color: var(--primary, #ff1e3c);
+    font-weight: 700;
+  }
+
+  /* ============ BOTTOM INFO ============ */
+  .terminal-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.65rem 1rem;
+    margin-top: 0.75rem;
+    background: var(--card, rgba(10,10,18,0.6));
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--border, rgba(255,30,60,0.15));
+    border-radius: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim, #70707f);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .terminal-info span {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .terminal-info .dot-green {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--success, #00ff88);
+    box-shadow: 0 0 8px var(--success, #00ff88);
+    animation: blink 2s infinite;
+  }
+
+  /* ============ MOBILE ============ */
+  @media (max-width: 640px) {
+    .terminal-wrapper {
+      padding: 0.5rem;
+    }
+    .top-bar {
+      padding: 0.75rem 0.85rem;
+      margin-bottom: 0.5rem;
+    }
+    .top-bar h2 {
+      font-size: 0.75rem;
+      letter-spacing: 2px;
+    }
+    .back-btn, .icon-btn, .logout-btn {
+      padding: 0.4rem 0.7rem;
+      font-size: 0.62rem;
+    }
+    .status-pill {
+      display: none;
+    }
+    .terminal-info {
+      font-size: 0.6rem;
+      padding: 0.5rem 0.75rem;
+    }
+    .loading-title {
+      font-size: 0.85rem;
+    }
+  }
+
+  [dir="rtl"] .top-bar-left { flex-direction: row-reverse; }
+  [dir="rtl"] .top-bar-right { flex-direction: row-reverse; }
+</style>
+</head>
+<body>
+
+<div class="bg-layer"></div>
+<canvas id="matrixCanvas"></canvas>
+
+<div class="terminal-wrapper">
+  <!-- TOP BAR -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <a class="back-btn" href="dashboard.html">← <span data-i18n="common.back">Back</span></a>
+      <h2><span class="linux-icon">🐧</span> LINUX TERMINAL</h2>
+    </div>
+    <div class="top-bar-right">
+      <span class="status-pill">● <span data-i18n="terminal.status">Online</span></span>
+      <button class="icon-btn" id="restartBtn" title="Restart Linux" type="button">🔄</button>
+      <button class="icon-btn" id="fullscreenBtn" title="Fullscreen" type="button">⛶</button>
+      <a class="icon-btn" href="settings.html" title="Settings">⚙</a>
+    </div>
+  </div>
+
+  <!-- TERMINAL CONTAINER -->
+  <div class="terminal-container" id="terminalContainer">
+    <div class="terminal-header">
+      <span class="mac-dot red"></span>
+      <span class="mac-dot yellow"></span>
+      <span class="mac-dot green"></span>
+      <span class="terminal-title">abyss@linux:~$</span>
+    </div>
+
+    <!-- Loading screen -->
+    <div class="loading-screen" id="loadingScreen">
+      <div class="loading-title">🐧 Booting Linux</div>
+      <div class="loading-bar">
+        <div class="loading-fill"></div>
+      </div>
+      <div class="loading-text">
+        Loading <span class="highlight">Alpine Linux</span> into your browser<br>
+        This may take 30-60 seconds on first boot<br>
+        <span style="color: var(--text-mute); font-size: 0.65rem;">Powered by JSLinux · WebAssembly</span>
+      </div>
+    </div>
+
+    <!-- Linux VM -->
+    <iframe 
+      id="jslinux"
+      src="about:blank"
+      title="Linux Terminal">
+    </iframe>
+  </div>
+
+  <!-- BOTTOM INFO -->
+  <div class="terminal-info">
+    <span><span class="dot-green"></span> VM Ready</span>
+    <span>Kernel: 5.10 · Alpine Linux</span>
+    <span id="uptime">Uptime: --</span>
+  </div>
+</div>
+
+<script src="lang.js"></script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBZbzltfXXt39cGeNYhrgfQCyd770xSq9g",
+  authDomain: "storage-for-devil-abyss.firebaseapp.com",
+  projectId: "storage-for-devil-abyss",
+  storageBucket: "storage-for-devil-abyss.firebasestorage.app",
+  messagingSenderId: "45419287364",
+  appId: "1:45419287364:web:a81c0b6e133326eece7d11"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ============ MATRIX RAIN ============ */
+const mc = document.getElementById('matrixCanvas');
+const mctx = mc.getContext('2d');
+let mcWidth, mcHeight, matrixCols, matrixDrops;
+const matrixFontSize = 16;
+const matrixChars = 'アカサタナハマヤラワ0123456789ABCDEF';
+
+function initMatrix(){
+  mcWidth = mc.width = innerWidth;
+  mcHeight = mc.height = innerHeight;
+  matrixCols = Math.floor(mcWidth / matrixFontSize);
+  matrixDrops = new Array(matrixCols).fill(1);
+}
+initMatrix();
+
+let resizeTimer;
+addEventListener('resize', function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(initMatrix, 200);
+});
+
+let lastMatrixTime = 0;
+const MATRIX_INTERVAL = 1000 / 30;
+
+function drawMatrix(now){
+  requestAnimationFrame(drawMatrix);
+  if (document.hidden) return;
+  if (now - lastMatrixTime < MATRIX_INTERVAL) return;
+  lastMatrixTime = now;
+
+  mctx.fillStyle = 'rgba(3, 3, 8, 0.08)';
+  mctx.fillRect(0, 0, mcWidth, mcHeight);
+  mctx.font = matrixFontSize + 'px JetBrains Mono, monospace';
+
+  const theme = window.AbyssTheme ? window.AbyssTheme.get() : 'abyss';
+  const primaryColors = {
+    abyss: '#ff1e3c',
+    matrix: '#00ff41',
+    ice: '#00c8ff',
+    void: '#b400ff',
+    stealth: '#a0a0a0'
+  };
+  const color = primaryColors[theme] || '#ff1e3c';
+
+  for (let i = 0; i < matrixDrops.length; i++){
+    const text = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+    const x = i * matrixFontSize;
+    const y = matrixDrops[i] * matrixFontSize;
+    mctx.fillStyle = color;
+    mctx.fillText(text, x, y);
+    if (y > mcHeight && Math.random() > 0.975) matrixDrops[i] = 0;
+    matrixDrops[i]++;
+  }
+}
+requestAnimationFrame(drawMatrix);
+
+/* ============ AUTH ============ */
+let currentUser = null;
+
+onAuthStateChanged(auth, async function(user){
+  if (!user){
+    window.location.replace('index.html');
+    return;
+  }
+
+  let stored = sessionStorage.getItem('abyss_user');
+  if (!stored && user.email){
+    const emailUser = user.email.split('@')[0];
+    stored = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
+  }
+  currentUser = stored || 'unknown';
+
+  // Load Linux VM
+  loadLinux();
+});
+
+/* ============ LOAD LINUX ============ */
+function loadLinux(){
+  const iframe = document.getElementById('jslinux');
+  const loadingScreen = document.getElementById('loadingScreen');
+
+  // JSLinux URL — Alpine Linux
+  // Uses Bellard's public server (no setup required)
+  const linuxUrl = 'https://bellard.org/jslinux/vm.html?url=alpine-x86.cfg&mem=192';
+
+  iframe.src = linuxUrl;
+
+  // Hide loading screen after iframe loads (roughly)
+  setTimeout(function(){
+    loadingScreen.classList.add('hidden');
+  }, 3000);
+
+  iframe.addEventListener('load', function(){
+    setTimeout(function(){
+      loadingScreen.classList.add('hidden');
+    }, 1000);
+  });
+}
+
+/* ============ UPTIME ============ */
+const startTime = Date.now();
+setInterval(function(){
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const mins = Math.floor(elapsed / 60);
+  const secs = elapsed % 60;
+  document.getElementById('uptime').textContent = 'Uptime: ' + mins + 'm ' + secs + 's';
+}, 1000);
+
+/* ============ RESTART ============ */
+document.getElementById('restartBtn').addEventListener('click', function(){
+  if (!confirm('🔄 Restart Linux? All unsaved data will be lost.')) return;
+  location.reload();
+});
+
+/* ============ FULLSCREEN ============ */
+document.getElementById('fullscreenBtn').addEventListener('click', function(){
+  const container = document.getElementById('terminalContainer');
+  
+  if (!document.fullscreenElement){
+    if (container.requestFullscreen){
+      container.requestFullscreen();
+    } else if (container.webkitRequestFullscreen){
+      container.webkitRequestFullscreen();
+    }
+  } else {
+    if (document.exitFullscreen){
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen){
+      document.webkitExitFullscreen();
+    }
+  }
+});
+
+/* ============ REACT TO THEME ============ */
+window.addEventListener('themeChanged', function(){
+  // Nothing needed — CSS variables auto-update
+});
+</script>
+</body>
+</html>
