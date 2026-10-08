@@ -48,16 +48,158 @@
     opacity: 0.15;
   }
 
+  /* ============ GATE ============ */
+  #gateView {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  #gateView.hidden { display: none; }
+
+  .gate-card {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card, rgba(10,10,18,0.65));
+    backdrop-filter: blur(14px) saturate(150%);
+    -webkit-backdrop-filter: blur(14px) saturate(150%);
+    border: 1px solid var(--border, rgba(255,30,60,0.3));
+    border-radius: 24px;
+    padding: 3rem 2.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -25px var(--primary-glow, rgba(255,30,60,0.5));
+    animation: cardEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes cardEnter {
+    from { opacity: 0; transform: translateY(20px) scale(0.98); filter: blur(10px); }
+    to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  }
+
+  .gate-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary, #ff1e3c) 50%, transparent);
+    animation: topLine 3s linear infinite;
+    box-shadow: 0 0 12px var(--primary-glow, rgba(255,30,60,0.6));
+  }
+
+  @keyframes topLine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .gate-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1.25rem;
+    display: block;
+    filter: drop-shadow(0 0 25px var(--primary, #ff1e3c));
+  }
+
+  .gate-title {
+    font-size: 1.1rem;
+    font-weight: 900;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--primary, #ff1e3c);
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 15px var(--primary-glow, rgba(255,30,60,0.6));
+  }
+
+  .gate-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim, #70707f);
+    margin-bottom: 2rem;
+  }
+
+  .gate-input {
+    width: 100%;
+    padding: 1.15rem;
+    background: rgba(5, 5, 12, 0.7);
+    border: 1px solid var(--border, rgba(255,30,60,0.2));
+    border-radius: 12px;
+    color: var(--text, #ebebf5);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.75rem;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 12px;
+    outline: none;
+    transition: all 0.3s;
+    margin-bottom: 1.25rem;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  .gate-input:focus {
+    border-color: var(--border-hover, rgba(255,30,60,0.65));
+    background: rgba(12, 5, 12, 0.85);
+    box-shadow: 0 0 0 3px var(--primary-glow, rgba(255,30,60,0.1));
+  }
+
+  .gate-btn {
+    width: 100%;
+    padding: 1.05rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--primary, #ff1e3c) 0%, var(--primary-2, #cc0022) 100%);
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 24px var(--primary-glow, rgba(255,30,60,0.45));
+    font-family: inherit;
+    touch-action: manipulation;
+  }
+  .gate-btn:hover { transform: translateY(-2px); }
+  .gate-btn:active { transform: translateY(0) scale(0.98); }
+  .gate-btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
+
+  .gate-msg {
+    margin-top: 1.25rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    min-height: 1.5rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-dim, #70707f);
+  }
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-12px) rotate(-0.5deg); }
+    30% { transform: translateX(12px) rotate(0.5deg); }
+    45% { transform: translateX(-8px); }
+    60% { transform: translateX(8px); }
+    80% { transform: translateX(-4px); }
+  }
+  .shake { animation: shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
+
+  /* ============ APP ============ */
   .terminal-wrapper {
     position: relative;
     z-index: 10;
     height: 100vh;
-    display: flex;
+    display: none;
     flex-direction: column;
     padding: 1rem;
     max-width: 1400px;
     margin: 0 auto;
   }
+  .terminal-wrapper.active { display: flex; }
 
   /* ============ TOP BAR ============ */
   .top-bar {
@@ -86,10 +228,6 @@
     background: linear-gradient(90deg, transparent, var(--primary, #ff1e3c), transparent);
     animation: topLine 5s linear infinite;
   }
-  @keyframes topLine {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-  }
 
   .top-bar-left, .top-bar-right {
     display: flex;
@@ -112,7 +250,7 @@
     margin-right: 0.4rem;
   }
 
-  .back-btn, .icon-btn, .logout-btn {
+  .back-btn, .icon-btn {
     padding: 0.5rem 1rem;
     border: 1px solid var(--border, rgba(255,30,60,0.25));
     border-radius: 20px;
@@ -137,7 +275,7 @@
     padding: 0.5rem;
   }
 
-  .back-btn:hover, .icon-btn:hover, .logout-btn:hover {
+  .back-btn:hover, .icon-btn:hover {
     background: var(--primary, #ff1e3c);
     color: #000;
     border-color: var(--primary, #ff1e3c);
@@ -186,7 +324,6 @@
       inset 0 0 60px rgba(0, 0, 0, 0.9);
   }
 
-  /* Terminal header (fake mac buttons) */
   .terminal-header {
     position: absolute;
     top: 0;
@@ -221,7 +358,6 @@
     text-transform: uppercase;
   }
 
-  /* ============ IFRAME ============ */
   #jslinux {
     position: absolute;
     top: 38px;
@@ -234,7 +370,6 @@
     background: #000;
   }
 
-  /* ============ LOADING SCREEN ============ */
   .loading-screen {
     position: absolute;
     top: 38px;
@@ -350,31 +485,16 @@
 
   /* ============ MOBILE ============ */
   @media (max-width: 640px) {
-    .terminal-wrapper {
-      padding: 0.5rem;
-    }
-    .top-bar {
-      padding: 0.75rem 0.85rem;
-      margin-bottom: 0.5rem;
-    }
-    .top-bar h2 {
-      font-size: 0.75rem;
-      letter-spacing: 2px;
-    }
-    .back-btn, .icon-btn, .logout-btn {
-      padding: 0.4rem 0.7rem;
-      font-size: 0.62rem;
-    }
-    .status-pill {
-      display: none;
-    }
-    .terminal-info {
-      font-size: 0.6rem;
-      padding: 0.5rem 0.75rem;
-    }
-    .loading-title {
-      font-size: 0.85rem;
-    }
+    .terminal-wrapper { padding: 0.5rem; }
+    .top-bar { padding: 0.75rem 0.85rem; margin-bottom: 0.5rem; }
+    .top-bar h2 { font-size: 0.75rem; letter-spacing: 2px; }
+    .back-btn, .icon-btn { padding: 0.4rem 0.7rem; font-size: 0.62rem; }
+    .icon-btn { width: 36px; }
+    .status-pill { display: none; }
+    .terminal-info { font-size: 0.6rem; padding: 0.5rem 0.75rem; }
+    .loading-title { font-size: 0.85rem; }
+    .gate-card { padding: 2.25rem 1.5rem; }
+    .gate-input { font-size: 1.5rem; letter-spacing: 8px; }
   }
 
   [dir="rtl"] .top-bar-left { flex-direction: row-reverse; }
@@ -386,22 +506,35 @@
 <div class="bg-layer"></div>
 <canvas id="matrixCanvas"></canvas>
 
-<div class="terminal-wrapper">
-  <!-- TOP BAR -->
+<!-- GATE -->
+<div id="gateView">
+  <div class="gate-card" id="gateCard">
+    <span class="gate-icon">🐧</span>
+    <div class="gate-title">RESTRICTED</div>
+    <div class="gate-sub">Enter command code</div>
+    <input type="password" id="gateInput" class="gate-input"
+      placeholder="••••" maxlength="8" autocomplete="off"
+      inputmode="numeric" spellcheck="false">
+    <button class="gate-btn" id="gateBtn" type="button">▸ Unlock Terminal</button>
+    <div class="gate-msg" id="gateMsg"></div>
+  </div>
+</div>
+
+<!-- TERMINAL APP -->
+<div class="terminal-wrapper" id="terminalApp">
   <div class="top-bar">
     <div class="top-bar-left">
-      <a class="back-btn" href="dashboard.html">← <span data-i18n="common.back">Back</span></a>
+      <a class="back-btn" href="dashboard.html">← Back</a>
       <h2><span class="linux-icon">🐧</span> LINUX TERMINAL</h2>
     </div>
     <div class="top-bar-right">
-      <span class="status-pill">● <span data-i18n="terminal.status">Online</span></span>
+      <span class="status-pill">● Online</span>
       <button class="icon-btn" id="restartBtn" title="Restart Linux" type="button">🔄</button>
       <button class="icon-btn" id="fullscreenBtn" title="Fullscreen" type="button">⛶</button>
       <a class="icon-btn" href="settings.html" title="Settings">⚙</a>
     </div>
   </div>
 
-  <!-- TERMINAL CONTAINER -->
   <div class="terminal-container" id="terminalContainer">
     <div class="terminal-header">
       <span class="mac-dot red"></span>
@@ -410,7 +543,6 @@
       <span class="terminal-title">abyss@linux:~$</span>
     </div>
 
-    <!-- Loading screen -->
     <div class="loading-screen" id="loadingScreen">
       <div class="loading-title">🐧 Booting Linux</div>
       <div class="loading-bar">
@@ -423,7 +555,6 @@
       </div>
     </div>
 
-    <!-- Linux VM -->
     <iframe 
       id="jslinux"
       src="about:blank"
@@ -431,7 +562,6 @@
     </iframe>
   </div>
 
-  <!-- BOTTOM INFO -->
   <div class="terminal-info">
     <span><span class="dot-green"></span> VM Ready</span>
     <span>Kernel: 5.10 · Alpine Linux</span>
@@ -460,6 +590,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+let currentUser = null;
 
 /* ============ MATRIX RAIN ============ */
 const mc = document.getElementById('matrixCanvas');
@@ -518,37 +650,103 @@ function drawMatrix(now){
 requestAnimationFrame(drawMatrix);
 
 /* ============ AUTH ============ */
-let currentUser = null;
-
-onAuthStateChanged(auth, async function(user){
+onAuthStateChanged(auth, function(user){
   if (!user){
     window.location.replace('index.html');
     return;
   }
-
-  let stored = sessionStorage.getItem('abyss_user');
-  if (!stored && user.email){
+  const stored = sessionStorage.getItem('abyss_user');
+  if (stored){
+    currentUser = stored;
+  } else {
     const emailUser = user.email.split('@')[0];
-    stored = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
+    currentUser = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
   }
-  currentUser = stored || 'unknown';
-
-  // Load Linux VM
-  loadLinux();
 });
+
+/* ============ GATE (نفس admin.html) ============ */
+const gateView = document.getElementById('gateView');
+const gateCard = document.getElementById('gateCard');
+const gateInput = document.getElementById('gateInput');
+const gateBtn = document.getElementById('gateBtn');
+const gateMsg = document.getElementById('gateMsg');
+const terminalApp = document.getElementById('terminalApp');
+
+function shakeGate(){
+  gateCard.classList.add('shake');
+  setTimeout(function(){ gateCard.classList.remove('shake'); }, 550);
+}
+
+function unlockApp(){
+  gateView.classList.add('hidden');
+  terminalApp.classList.add('active');
+  sessionStorage.setItem('abyss_terminal_unlocked', 'ok');
+  loadLinux();
+}
+
+async function tryUnlock(){
+  const code = gateInput.value.trim();
+  if (!code){
+    gateMsg.style.color = 'var(--primary, #ff1e3c)';
+    gateMsg.textContent = '✕ Enter the code';
+    shakeGate();
+    return;
+  }
+
+  gateBtn.disabled = true;
+  gateMsg.style.color = 'var(--text-dim, #70707f)';
+  gateMsg.textContent = '◈ Verifying...';
+
+  // ✅ اقرأ الرمز من Firestore (نفس adminCode)
+  let correctCode = null;
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'config'));
+    if (snap.exists()){
+      correctCode = snap.data().adminCode;
+    }
+  } catch(e){
+    console.error('Failed to read adminCode:', e);
+  }
+
+  setTimeout(function(){
+    gateBtn.disabled = false;
+
+    if (correctCode && code === String(correctCode)){
+      gateMsg.style.color = 'var(--success, #00ff88)';
+      gateMsg.textContent = '✓ Access granted';
+      setTimeout(unlockApp, 300);
+    } else {
+      gateMsg.style.color = 'var(--primary, #ff1e3c)';
+      gateMsg.textContent = '✕ Invalid command code';
+      gateInput.value = '';
+      shakeGate();
+      setTimeout(function(){ gateInput.focus(); }, 200);
+    }
+  }, 250);
+}
+
+gateBtn.addEventListener('click', tryUnlock);
+gateInput.addEventListener('keypress', function(e){
+  if (e.key === 'Enter'){ e.preventDefault(); tryUnlock(); }
+});
+
+// تذكر الإجابة في الجلسة
+if (sessionStorage.getItem('abyss_terminal_unlocked') === 'ok'){
+  setTimeout(unlockApp, 100);
+} else {
+  setTimeout(function(){ gateInput.focus(); }, 300);
+}
 
 /* ============ LOAD LINUX ============ */
 function loadLinux(){
   const iframe = document.getElementById('jslinux');
   const loadingScreen = document.getElementById('loadingScreen');
 
-  // JSLinux URL — Alpine Linux
-  // Uses Bellard's public server (no setup required)
+  // JSLinux — Alpine Linux
   const linuxUrl = 'https://bellard.org/jslinux/vm.html?url=alpine-x86.cfg&mem=192';
 
   iframe.src = linuxUrl;
 
-  // Hide loading screen after iframe loads (roughly)
   setTimeout(function(){
     loadingScreen.classList.add('hidden');
   }, 3000);
@@ -566,7 +764,8 @@ setInterval(function(){
   const elapsed = Math.floor((Date.now() - startTime) / 1000);
   const mins = Math.floor(elapsed / 60);
   const secs = elapsed % 60;
-  document.getElementById('uptime').textContent = 'Uptime: ' + mins + 'm ' + secs + 's';
+  const uptimeEl = document.getElementById('uptime');
+  if (uptimeEl) uptimeEl.textContent = 'Uptime: ' + mins + 'm ' + secs + 's';
 }, 1000);
 
 /* ============ RESTART ============ */
@@ -592,11 +791,6 @@ document.getElementById('fullscreenBtn').addEventListener('click', function(){
       document.webkitExitFullscreen();
     }
   }
-});
-
-/* ============ REACT TO THEME ============ */
-window.addEventListener('themeChanged', function(){
-  // Nothing needed — CSS variables auto-update
 });
 </script>
 </body>
