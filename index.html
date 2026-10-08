@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>ABYSS · SECURE ACCESS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,7 +11,7 @@
 <script src="theme.js"></script>
 
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
   html, body { height: 100%; }
 
   body {
@@ -25,6 +25,8 @@
     overflow: hidden;
     position: relative;
     transition: background 0.4s, color 0.4s;
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   /* ============ BACKGROUND ============ */
@@ -39,12 +41,6 @@
     pointer-events: none;
     mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
     -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
-    animation: gridMove 20s linear infinite;
-  }
-
-  @keyframes gridMove {
-    0% { background-position: 0 0, 0 0; }
-    100% { background-position: 60px 60px, 60px 60px; }
   }
 
   .bg-glow {
@@ -55,12 +51,6 @@
       radial-gradient(circle at 85% 80%, var(--primary-glow, rgba(255, 30, 60, 0.12)) 0%, transparent 45%);
     z-index: 1;
     pointer-events: none;
-    animation: bgPulse 8s ease-in-out infinite;
-  }
-
-  @keyframes bgPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.65; }
   }
 
   #matrixCanvas {
@@ -88,7 +78,7 @@
     opacity: 0.6;
   }
 
-  /* ============ TOP-RIGHT BUTTONS ============ */
+  /* ============ TOP BUTTONS ============ */
   .top-buttons {
     position: fixed;
     top: 1.25rem;
@@ -120,12 +110,13 @@
     justify-content: center;
     font-family: inherit;
     text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
   }
 
-  .top-btn:hover {
+  .top-btn:hover, .top-btn:active {
     border-color: var(--primary, #ff1e3c);
-    transform: translateY(-2px);
-    box-shadow: 0 0 20px var(--primary-glow, rgba(255,30,60,0.5));
+    background: var(--primary, #ff1e3c);
+    color: #000;
   }
 
   /* ============ LOGIN CARD ============ */
@@ -231,18 +222,9 @@
     text-transform: uppercase;
     line-height: 1;
     margin-bottom: 0.75rem;
-    position: relative;
-    animation: titleGlitch 6s infinite;
     text-shadow:
       0 0 20px var(--primary-glow, rgba(255, 30, 60, 0.6)),
       0 0 40px var(--primary-glow, rgba(255, 30, 60, 0.4));
-  }
-
-  @keyframes titleGlitch {
-    0%, 88%, 100% { transform: translate(0); }
-    90% { transform: translate(-1px, 0); }
-    92% { transform: translate(1px, 0); }
-    94% { transform: translate(-1px, 0); }
   }
 
   .brand-sub {
@@ -308,7 +290,7 @@
     51%, 100% { opacity: 0; }
   }
 
-  /* Inputs */
+  /* ============ INPUTS ============ */
   .input-group {
     margin-bottom: 1.15rem;
     position: relative;
@@ -335,14 +317,9 @@
     color: var(--primary, #ff1e3c);
     font-weight: 700;
     font-size: 1rem;
-    transition: transform 0.2s;
   }
 
-  [dir="rtl"] .input-label::before {
-    content: '‹';
-  }
-
-  .input-group.focused .input-label::before { transform: translateX(3px); }
+  [dir="rtl"] .input-label::before { content: '‹'; }
 
   .input-wrapper {
     position: relative;
@@ -352,23 +329,7 @@
     border-radius: 12px;
     border: 1px solid var(--border, rgba(255, 30, 60, 0.2));
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
   }
-
-  .input-wrapper::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    width: 0;
-    height: 1px;
-    background: var(--primary, #ff1e3c);
-    box-shadow: 0 0 10px var(--primary, #ff1e3c);
-    transform: translateX(-50%);
-    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .input-wrapper:focus-within::after { width: 100%; }
 
   .input-wrapper:focus-within {
     border-color: var(--border-hover, rgba(255, 30, 60, 0.65));
@@ -386,8 +347,10 @@
     color: var(--text, #ebebf5);
     outline: none;
     letter-spacing: 0.5px;
-    position: relative;
-    z-index: 1;
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-appearance: none;
+    appearance: none;
   }
 
   .input-wrapper input::placeholder {
@@ -396,7 +359,13 @@
     letter-spacing: 1px;
   }
 
-  /* Button */
+  .input-wrapper input:-webkit-autofill {
+    -webkit-text-fill-color: var(--text, #ebebf5);
+    -webkit-box-shadow: 0 0 0 1000px rgba(5, 5, 12, 0.7) inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  /* ============ BUTTON ============ */
   .btn-primary {
     width: 100%;
     padding: 1.15rem;
@@ -421,6 +390,8 @@
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
   }
 
   @keyframes btnGradient {
@@ -433,10 +404,18 @@
     box-shadow: 0 8px 40px var(--primary-glow, rgba(255, 30, 60, 0.6));
   }
 
-  .btn-primary:active { transform: translateY(0) scale(0.99); }
-  .btn-primary:disabled { opacity: 0.6; cursor: wait; transform: none; animation: none; }
+  .btn-primary:active {
+    transform: translateY(0) scale(0.98);
+  }
 
-  /* Message */
+  .btn-primary:disabled {
+    opacity: 0.6;
+    cursor: wait;
+    transform: none;
+    animation: none;
+  }
+
+  /* ============ MESSAGE ============ */
   .message-area {
     margin-top: 1.75rem;
     padding: 1rem 1.15rem;
@@ -497,14 +476,53 @@
     100% { opacity: 0; }
   }
 
-  /* Mobile */
+  /* ============ MOBILE ============ */
   @media (max-width: 480px) {
-    .login-card { padding: 2.25rem 1.5rem 1.75rem; border-radius: 20px; }
-    .brand-title { font-size: 2.1rem; letter-spacing: 6px; }
-    body { padding: 1rem; }
-    .boot-log { font-size: 0.62rem; }
-    .top-buttons { top: 0.75rem; right: 0.75rem; }
-    .top-btn { width: 38px; height: 38px; font-size: 1rem; }
+    body {
+      padding: 0.75rem;
+      align-items: flex-start;
+      padding-top: 3rem;
+      overflow-y: auto;
+    }
+    .login-card {
+      padding: 2rem 1.25rem 1.75rem;
+      border-radius: 20px;
+      max-width: 100%;
+    }
+    .brand-title {
+      font-size: 2.1rem;
+      letter-spacing: 6px;
+    }
+    .brand-sub {
+      font-size: 0.6rem;
+      letter-spacing: 4px;
+    }
+    .boot-log {
+      font-size: 0.6rem;
+      padding: 0.65rem 0.85rem;
+    }
+    .input-wrapper input {
+      padding: 0.95rem 1rem;
+      font-size: 16px; /* ✅ منع zoom في iOS */
+    }
+    .btn-primary {
+      padding: 1.05rem;
+      font-size: 0.78rem;
+      letter-spacing: 3px;
+    }
+    .top-buttons {
+      top: 0.75rem;
+      right: 0.75rem;
+    }
+    .top-btn {
+      width: 38px;
+      height: 38px;
+      font-size: 1rem;
+    }
+    .message-area {
+      font-size: 0.72rem;
+      padding: 0.85rem 0.9rem;
+    }
   }
 
   [dir="rtl"] .status-bar { flex-direction: row-reverse; }
@@ -519,7 +537,7 @@
 
 <!-- Top buttons -->
 <div class="top-buttons">
-  <button class="top-btn" id="langTopBtn" title="Switch Language">🌐</button>
+  <button class="top-btn" id="langTopBtn" title="Switch Language" type="button">🌐</button>
   <a class="top-btn" href="settings.html" title="Settings">⚙</a>
 </div>
 
@@ -547,29 +565,29 @@
   <div class="boot-log" id="bootLog"></div>
 
   <form id="loginForm" onsubmit="return false;" autocomplete="off">
-    <!-- ✅ حقول وهمية لخداع Autofill -->
+    <!-- حقول وهمية لخداع Autofill -->
     <input type="text" name="fake_user_field" style="display:none" tabindex="-1" autocomplete="off">
     <input type="password" name="fake_pass_field" style="display:none" tabindex="-1" autocomplete="off">
 
     <div class="input-group" id="groupUser">
-      <label class="input-label" data-i18n="login.operator">Operator ID</label>
+      <label class="input-label" for="loginUser" data-i18n="login.operator">Operator ID</label>
       <div class="input-wrapper">
         <input type="text" id="loginUser"
           placeholder="Enter your operator id"
           autocomplete="off" autocorrect="off" autocapitalize="off"
           spellcheck="false" name="op_field_1" data-form-type="other"
-          readonly onfocus="this.removeAttribute('readonly')">
+          inputmode="text">
       </div>
     </div>
 
     <div class="input-group" id="groupPass">
-      <label class="input-label" data-i18n="login.passphrase">Passphrase</label>
+      <label class="input-label" for="loginPass" data-i18n="login.passphrase">Passphrase</label>
       <div class="input-wrapper">
         <input type="password" id="loginPass"
           placeholder="Enter your passphrase"
           autocomplete="new-password" autocorrect="off" autocapitalize="off"
           spellcheck="false" name="op_field_2" data-form-type="other"
-          readonly onfocus="this.removeAttribute('readonly')">
+          inputmode="text">
       </div>
     </div>
 
@@ -711,10 +729,13 @@ function bootNext(){
 }
 setTimeout(bootNext, 400);
 
-/* ============ LANGUAGE SWITCH TOP BUTTON ============ */
+/* ============ LANGUAGE SWITCH ============ */
 document.getElementById('langTopBtn').addEventListener('click', function(){
   const newLang = window.AbyssLang.getLang() === 'en' ? 'ar' : 'en';
   window.AbyssLang.setLang(newLang);
+  // Update placeholders
+  document.getElementById('loginUser').placeholder = window.AbyssLang.t('login.enter_id');
+  document.getElementById('loginPass').placeholder = window.AbyssLang.t('login.enter_pass');
 });
 
 /* ============ FOCUS EFFECTS ============ */
@@ -776,12 +797,16 @@ onAuthStateChanged(auth, async function(user){
   }
 });
 
-form.addEventListener('submit', async function(e){
-  e.preventDefault();
+async function handleLogin(e){
+  if (e) e.preventDefault();
   const t = window.AbyssLang.t;
   const u = userInput.value.trim();
   const p = passInput.value;
-  if (!u || !p){ setMsg('⚠ ' + t('login.required'), 'error'); shake(); return; }
+  if (!u || !p){
+    setMsg('⚠ ' + t('login.required'), 'error');
+    shake();
+    return;
+  }
 
   btn.disabled = true;
   setMsg('◈ ' + t('login.decrypting'), 'info');
@@ -820,19 +845,30 @@ form.addEventListener('submit', async function(e){
     shake();
     btn.disabled = false;
   }
-});
+}
 
+form.addEventListener('submit', handleLogin);
+
+// ✅ زر Enter لكل حقل
 [userInput, passInput].forEach(function(i){
   i.addEventListener('keypress', function(e){
-    if (e.key === 'Enter'){ e.preventDefault(); form.dispatchEvent(new Event('submit')); }
+    if (e.key === 'Enter'){ e.preventDefault(); handleLogin(); }
   });
 });
 
-/* ============ REACT TO LANGUAGE ============ */
+/* ============ INIT ============ */
+setTimeout(function(){
+  if (window.AbyssLang){
+    userInput.placeholder = window.AbyssLang.t('login.enter_id');
+    passInput.placeholder = window.AbyssLang.t('login.enter_pass');
+  }
+}, 100);
+
 window.addEventListener('langChanged', function(){
-  // Update placeholders
-  userInput.placeholder = window.AbyssLang.t('login.enter_id');
-  passInput.placeholder = window.AbyssLang.t('login.enter_pass');
+  if (window.AbyssLang){
+    userInput.placeholder = window.AbyssLang.t('login.enter_id');
+    passInput.placeholder = window.AbyssLang.t('login.enter_pass');
+  }
 });
 </script>
 </body>
