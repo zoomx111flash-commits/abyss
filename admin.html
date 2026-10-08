@@ -13,8 +13,8 @@
 
   :root {
     --bg: #030308;
-    --card: rgba(8, 8, 14, 0.45);
-    --card-solid: rgba(12, 12, 22, 0.85);
+    --card: rgba(10, 10, 18, 0.65);
+    --card-solid: rgba(12, 12, 22, 0.92);
     --border: rgba(255, 30, 60, 0.25);
     --border-hover: rgba(255, 30, 60, 0.65);
     --red: #ff1e3c;
@@ -24,8 +24,6 @@
     --text-dim: #70707f;
     --text-mute: #3a3a48;
     --success: #00ff88;
-    --cyan: #00e5ff;
-    --magenta: #ff00aa;
   }
 
   body {
@@ -34,227 +32,54 @@
     min-height: 100vh;
     overflow-x: hidden;
     padding: 1.5rem;
+    /* ✅ خلفية ثابتة بدون animations دائمة */
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(255, 30, 60, 0.12) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(150, 0, 255, 0.08) 0%, transparent 45%);
   }
 
-  /* ============ BACKGROUND ============ */
-  .bg-grid {
-    position: fixed; inset: 0;
-    background-image:
-      linear-gradient(rgba(255, 30, 60, 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 30, 60, 0.05) 1px, transparent 1px);
-    background-size: 60px 60px;
+  /* ✅ طبقة واحدة بدل 5 طبقات */
+  .bg-layer {
+    position: fixed;
+    inset: 0;
     z-index: 0;
     pointer-events: none;
-    animation: gridMove 20s linear infinite;
-  }
-  @keyframes gridMove {
-    0% { background-position: 0 0, 0 0; }
-    100% { background-position: 60px 60px, 60px 60px; }
+    background-image:
+      linear-gradient(rgba(255, 30, 60, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 30, 60, 0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    opacity: 0.8;
   }
 
-  .bg-glow {
-    position: fixed; inset: 0;
-    background:
-      radial-gradient(circle at 15% 20%, rgba(255, 30, 60, 0.15) 0%, transparent 45%),
-      radial-gradient(circle at 85% 80%, rgba(150, 0, 255, 0.1) 0%, transparent 45%);
+  /* ✅ Canvas واحد فقط للـ matrix */
+  #matrixCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     z-index: 1;
     pointer-events: none;
-    animation: bgPulse 8s ease-in-out infinite;
-  }
-  @keyframes bgPulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.65; }
+    opacity: 0.3;
   }
 
-  #matrixCanvas {
-    position: fixed; inset: 0;
-    width: 100%; height: 100%;
-    z-index: 2;
-    pointer-events: none;
-    opacity: 0.35;
-  }
-
+  /* Cursor glow — بدون RAF دائم */
   .cursor-glow {
     position: fixed;
-    width: 600px; height: 600px;
+    width: 400px;
+    height: 400px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(255, 30, 60, 0.1) 0%, transparent 60%);
+    background: radial-gradient(circle, rgba(255, 30, 60, 0.08) 0%, transparent 60%);
     pointer-events: none;
-    z-index: 3;
+    z-index: 2;
     transform: translate(-50%, -50%);
-    transition: opacity 0.4s;
+    transition: opacity 0.3s;
     opacity: 0;
+    filter: blur(30px);
     will-change: transform;
-    filter: blur(20px);
   }
   .cursor-glow.active { opacity: 1; }
-
-  .bg-scan {
-    position: fixed; inset: 0;
-    background: repeating-linear-gradient(
-      to bottom,
-      transparent 0px,
-      transparent 3px,
-      rgba(255, 30, 60, 0.015) 3px,
-      rgba(255, 30, 60, 0.015) 4px
-    );
-    z-index: 4;
-    pointer-events: none;
-    opacity: 0.6;
-  }
-
-  /* ============ GATE ============ */
-  #gateView {
-    position: fixed; inset: 0;
-    z-index: 20;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-  }
-  #gateView.hidden { display: none; }
-
-  .gate-card {
-    width: 100%;
-    max-width: 420px;
-    background: var(--card);
-    backdrop-filter: blur(24px) saturate(150%);
-    -webkit-backdrop-filter: blur(24px) saturate(150%);
-    border: 1px solid var(--border);
-    border-radius: 24px;
-    padding: 3rem 2.5rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-    box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.03) inset,
-      0 32px 80px -25px rgba(255, 30, 60, 0.4),
-      0 12px 40px -12px rgba(0, 0, 0, 0.8);
-    animation: cardEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes cardEnter {
-    from { opacity: 0; transform: translateY(20px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
-
-  .gate-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, transparent, var(--red) 50%, transparent);
-    animation: topLine 3s linear infinite;
-    box-shadow: 0 0 12px var(--red-glow);
-  }
-  @keyframes topLine {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-  }
-
-  .gate-icon {
-    font-size: 3.5rem;
-    margin-bottom: 1.25rem;
-    display: block;
-    filter: drop-shadow(0 0 25px var(--red));
-    animation: gateIcon 3s ease-in-out infinite;
-  }
-  @keyframes gateIcon {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.08); }
-  }
-
-  .gate-title {
-    font-size: 1.1rem;
-    font-weight: 900;
-    letter-spacing: 6px;
-    text-transform: uppercase;
-    color: var(--red);
-    margin-bottom: 0.5rem;
-    text-shadow: 0 0 15px var(--red-glow);
-  }
-
-  .gate-sub {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.68rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 2rem;
-  }
-
-  .gate-input {
-    width: 100%;
-    padding: 1.15rem;
-    background: rgba(5, 5, 12, 0.7);
-    border: 1px solid rgba(255, 30, 60, 0.2);
-    border-radius: 12px;
-    color: var(--text);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 1.75rem;
-    font-weight: 700;
-    text-align: center;
-    letter-spacing: 12px;
-    outline: none;
-    transition: all 0.3s;
-    margin-bottom: 1.25rem;
-  }
-  .gate-input:focus {
-    border-color: var(--border-hover);
-    background: rgba(12, 5, 12, 0.85);
-    box-shadow: 0 0 0 3px rgba(255, 30, 60, 0.08), 0 0 30px rgba(255, 30, 60, 0.2);
-  }
-  .gate-input::placeholder {
-    color: var(--text-mute);
-    letter-spacing: 12px;
-  }
-
-  .gate-btn {
-    width: 100%;
-    padding: 1.05rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: #fff;
-    border: none;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #ff1e3c 0%, #cc0022 50%, #ff1e3c 100%);
-    background-size: 200% 200%;
-    cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 4px 24px rgba(255, 30, 60, 0.45);
-    animation: btnGradient 4s ease infinite;
-    position: relative;
-    overflow: hidden;
-  }
-  @keyframes btnGradient {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-  .gate-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(255, 30, 60, 0.6); }
-  .gate-btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
-
-  .gate-msg {
-    margin-top: 1.25rem;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    min-height: 1.5rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    color: var(--text-dim);
-  }
-
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    15% { transform: translateX(-12px) rotate(-0.5deg); }
-    30% { transform: translateX(12px) rotate(0.5deg); }
-    45% { transform: translateX(-8px); }
-    60% { transform: translateX(8px); }
-    80% { transform: translateX(-4px); }
-  }
-  .shake { animation: shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
 
   /* ============ APP ============ */
   #app {
@@ -274,8 +99,8 @@
     padding: 1rem 1.5rem;
     margin-bottom: 1.5rem;
     background: var(--card);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
     border: 1px solid var(--border);
     border-radius: 16px;
     box-shadow: 0 20px 60px -20px rgba(255, 30, 60, 0.3);
@@ -291,6 +116,10 @@
     height: 1px;
     background: linear-gradient(90deg, transparent, var(--red), transparent);
     animation: topLine 5s linear infinite;
+  }
+  @keyframes topLine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
   }
 
   .top-bar-left, .top-bar-right {
@@ -321,7 +150,7 @@
     letter-spacing: 2px;
     text-transform: uppercase;
     text-decoration: none;
-    transition: all 0.3s;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -330,8 +159,6 @@
     background: var(--red);
     color: #000;
     border-color: var(--red);
-    box-shadow: 0 0 20px rgba(255, 30, 60, 0.5);
-    transform: translateY(-1px);
   }
 
   .status-pill {
@@ -364,7 +191,6 @@
     border-color: var(--red);
     background: rgba(255, 30, 60, 0.15);
     color: var(--red);
-    box-shadow: 0 0 20px rgba(255, 30, 60, 0.5);
   }
   .status-pill.locked::before {
     background: var(--red);
@@ -374,8 +200,8 @@
   /* ============ CARD ============ */
   .card {
     background: var(--card);
-    backdrop-filter: blur(20px) saturate(150%);
-    -webkit-backdrop-filter: blur(20px) saturate(150%);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 1.5rem;
@@ -383,10 +209,7 @@
     box-shadow: 0 20px 60px -20px rgba(255, 30, 60, 0.2);
     position: relative;
     overflow: hidden;
-    animation: cardEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }
-  .card:nth-child(1) { animation-delay: 0.05s; }
-  .card:nth-child(2) { animation-delay: 0.15s; }
 
   .card-title {
     display: flex;
@@ -422,22 +245,10 @@
     font-family: inherit;
     text-align: left;
     color: var(--text);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.2s, border-color 0.2s, background 0.2s, box-shadow 0.2s;
     position: relative;
     overflow: hidden;
   }
-
-  .cmd-btn::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 3px;
-    height: 0;
-    background: var(--red);
-    transition: height 0.3s;
-  }
-
-  .cmd-btn:hover::before { height: 100%; }
 
   .cmd-btn:hover {
     transform: translateX(4px);
@@ -446,20 +257,16 @@
     box-shadow: 0 0 30px rgba(255, 30, 60, 0.15);
   }
 
-  .cmd-btn.danger { border-color: rgba(255, 30, 60, 0.4); }
   .cmd-btn.danger:hover {
     background: rgba(255, 30, 60, 0.1);
     box-shadow: 0 0 30px rgba(255, 30, 60, 0.3);
   }
-  .cmd-btn.danger::before { background: var(--red); }
 
-  .cmd-btn.success { border-color: rgba(0, 255, 136, 0.3); }
   .cmd-btn.success:hover {
     background: rgba(0, 255, 136, 0.06);
     border-color: rgba(0, 255, 136, 0.6);
     box-shadow: 0 0 30px rgba(0, 255, 136, 0.2);
   }
-  .cmd-btn.success::before { background: var(--success); }
 
   .cmd-btn .ico {
     font-size: 1.4rem;
@@ -499,19 +306,18 @@
     background: rgba(5, 5, 12, 0.5);
     border: 1px solid var(--border);
     border-radius: 12px;
-    transition: all 0.25s;
+    transition: border-color 0.2s, box-shadow 0.2s;
     flex-wrap: wrap;
   }
 
   .user-row:hover {
     border-color: var(--border-hover);
-    box-shadow: 0 0 20px rgba(255, 30, 60, 0.15);
   }
 
   .user-row.owner {
     border-color: var(--red);
     background: rgba(255, 30, 60, 0.06);
-    box-shadow: 0 0 25px rgba(255, 30, 60, 0.25);
+    box-shadow: 0 0 20px rgba(255, 30, 60, 0.2);
   }
 
   .user-row.suspended {
@@ -525,7 +331,6 @@
     font-weight: 700;
     letter-spacing: 1.5px;
     color: var(--red);
-    text-shadow: 0 0 8px rgba(255, 30, 60, 0.4);
     min-width: 110px;
   }
 
@@ -536,7 +341,6 @@
 
   .user-row.suspended .u-name {
     color: #ffaa00;
-    text-shadow: 0 0 8px rgba(255, 170, 0, 0.5);
   }
 
   .user-row .u-real {
@@ -563,14 +367,13 @@
     color: var(--text-dim);
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.25s;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
   }
 
   .user-row .u-kick:hover {
     background: var(--red);
     color: #fff;
     border-color: var(--red);
-    box-shadow: 0 0 20px rgba(255, 30, 60, 0.5);
   }
 
   .user-row .u-kick.owner {
@@ -590,7 +393,6 @@
     background: var(--success);
     color: #000;
     border-color: var(--success);
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
   }
 
   /* ============ MODAL ============ */
@@ -599,38 +401,23 @@
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     z-index: 200;
     align-items: center;
     justify-content: center;
     padding: 1.5rem;
-    animation: fadeIn 0.25s;
   }
   .modal-bg.active { display: flex; }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
 
   .modal {
     width: 100%;
     max-width: 440px;
     background: var(--card-solid);
-    backdrop-filter: blur(30px) saturate(180%);
-    -webkit-backdrop-filter: blur(30px) saturate(180%);
     border: 1px solid var(--border);
     border-radius: 20px;
     padding: 2rem;
     box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.03) inset, 0 32px 80px -20px rgba(255, 30, 60, 0.4);
     position: relative;
     overflow: hidden;
-    animation: modalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-
-  @keyframes modalIn {
-    from { opacity: 0; transform: scale(0.95) translateY(10px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
   }
 
   .modal::before {
@@ -639,7 +426,6 @@
     top: 0; left: 0; right: 0;
     height: 2px;
     background: linear-gradient(90deg, transparent, var(--red), transparent);
-    box-shadow: 0 0 12px var(--red-glow);
   }
 
   .modal h3 {
@@ -687,13 +473,12 @@
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.88rem;
     outline: none;
-    transition: all 0.25s;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
 
   .modal input:focus, .modal select:focus {
     border-color: var(--border-hover);
-    background: rgba(12, 5, 12, 0.8);
-    box-shadow: 0 0 0 3px rgba(255, 30, 60, 0.08), 0 0 20px rgba(255, 30, 60, 0.15);
+    box-shadow: 0 0 0 3px rgba(255, 30, 60, 0.08);
   }
 
   .modal-btns {
@@ -712,18 +497,16 @@
     text-transform: uppercase;
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.25s;
+    transition: background 0.2s, color 0.2s;
   }
 
   .modal-btns .ok {
     background: linear-gradient(135deg, #ff1e3c 0%, #cc0022 100%);
     color: #fff;
     border: 1px solid var(--red);
-    box-shadow: 0 4px 20px rgba(255, 30, 60, 0.4);
   }
   .modal-btns .ok:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(255, 30, 60, 0.6);
+    background: #ff1e3c;
   }
 
   .modal-btns .cancel {
@@ -744,7 +527,6 @@
     transform: translateX(-50%) translateY(-100px);
     padding: 0.9rem 1.75rem;
     background: var(--card-solid);
-    backdrop-filter: blur(20px);
     border: 1px solid var(--red);
     border-radius: 12px;
     color: var(--text);
@@ -762,11 +544,97 @@
     color: var(--success);
     box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
   }
-  #toast.error {
-    border-color: var(--red);
-    color: var(--red);
-    box-shadow: 0 0 30px rgba(255, 30, 60, 0.5);
+  .status-pill.locked { border-color: var(--red); background: rgba(255,30,60,0.15); color: var(--red); }
+  .status-pill.locked::before { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+  /* ============ GATE ============ */
+  #gateView {
+    position: fixed; inset: 0;
+    z-index: 20;
+    display: flex; align-items: center; justify-content: center;
+    padding: 1.5rem;
   }
+  #gateView.hidden { display: none; }
+
+  .gate-card {
+    width: 100%; max-width: 420px;
+    background: var(--card);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 3rem 2.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -25px rgba(255, 30, 60, 0.4);
+  }
+  .gate-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red) 50%, transparent);
+  }
+
+  .gate-icon {
+    font-size: 3.5rem; margin-bottom: 1.25rem; display: block;
+    filter: drop-shadow(0 0 25px var(--red));
+  }
+  .gate-title {
+    font-size: 1.1rem; font-weight: 900;
+    letter-spacing: 6px; text-transform: uppercase;
+    color: var(--red); margin-bottom: 0.5rem;
+  }
+  .gate-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem; letter-spacing: 3px;
+    text-transform: uppercase; color: var(--text-dim);
+    margin-bottom: 2rem;
+  }
+  .gate-input {
+    width: 100%; padding: 1.15rem;
+    background: rgba(5, 5, 12, 0.7);
+    border: 1px solid rgba(255, 30, 60, 0.2);
+    border-radius: 12px; color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.75rem; font-weight: 700;
+    text-align: center; letter-spacing: 12px;
+    outline: none; margin-bottom: 1.25rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .gate-input:focus {
+    border-color: var(--border-hover);
+    box-shadow: 0 0 0 3px rgba(255, 30, 60, 0.08);
+  }
+  .gate-btn {
+    width: 100%; padding: 1.05rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem; font-weight: 700;
+    letter-spacing: 4px; text-transform: uppercase;
+    color: #fff; border: none; border-radius: 12px;
+    background: linear-gradient(135deg, #ff1e3c 0%, #cc0022 100%);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 24px rgba(255, 30, 60, 0.45);
+  }
+  .gate-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(255, 30, 60, 0.6); }
+  .gate-btn:disabled { opacity: 0.6; cursor: wait; transform: none; }
+  .gate-msg {
+    margin-top: 1.25rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem; min-height: 1.5rem;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    15% { transform: translateX(-12px); }
+    30% { transform: translateX(12px); }
+    45% { transform: translateX(-8px); }
+    60% { transform: translateX(8px); }
+    80% { transform: translateX(-4px); }
+  }
+  .shake { animation: shake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97); }
 
   /* ============ MOBILE ============ */
   @media (max-width: 640px) {
@@ -785,11 +653,9 @@
 </head>
 <body>
 
-<div class="bg-grid"></div>
-<div class="bg-glow"></div>
+<div class="bg-layer"></div>
 <canvas id="matrixCanvas"></canvas>
 <div class="cursor-glow" id="cursorGlow"></div>
-<div class="bg-scan"></div>
 
 <!-- GATE -->
 <div id="gateView">
@@ -880,47 +746,56 @@ const db = getFirestore(app);
 
 const ADMIN_USER = "Devil-0";
 
-/* ============ CURSOR GLOW ============ */
+/* ============ CURSOR GLOW — بدون RAF دائم ============ */
 const cursorGlow = document.getElementById('cursorGlow');
-let mouseX = 0, mouseY = 0, glowX = 0, glowY = 0;
+let rafPending = false;
 
 document.addEventListener('mousemove', function(e){
-  mouseX = e.clientX;
-  mouseY = e.clientY;
-  cursorGlow.classList.add('active');
-});
+  if (rafPending) return;
+  rafPending = true;
+  requestAnimationFrame(function(){
+    cursorGlow.style.transform = 'translate(' + (e.clientX - 200) + 'px, ' + (e.clientY - 200) + 'px)';
+    cursorGlow.classList.add('active');
+    rafPending = false;
+  });
+}, { passive: true });
+
 document.addEventListener('mouseleave', function(){
   cursorGlow.classList.remove('active');
 });
 
-function animateGlow(){
-  glowX += (mouseX - glowX) * 0.08;
-  glowY += (mouseY - glowY) * 0.08;
-  cursorGlow.style.left = glowX + 'px';
-  cursorGlow.style.top = glowY + 'px';
-  requestAnimationFrame(animateGlow);
-}
-animateGlow();
-
-/* ============ MATRIX RAIN ============ */
+/* ============ MATRIX RAIN — 30 FPS ============ */
 const mc = document.getElementById('matrixCanvas');
 const mctx = mc.getContext('2d');
-function resizeMC(){ mc.width = innerWidth; mc.height = innerHeight; }
-resizeMC(); addEventListener('resize', resizeMC);
-
+let mcWidth, mcHeight, matrixCols, matrixDrops, matrixFontSize = 16;
 const matrixChars = 'アカサタナハマヤラワ0123456789ABCDEF';
-const matrixFontSize = 16;
-let matrixCols = Math.floor(mc.width / matrixFontSize);
-let matrixDrops = Array(matrixCols).fill(1);
 
+function initMatrix(){
+  mcWidth = mc.width = innerWidth;
+  mcHeight = mc.height = innerHeight;
+  matrixCols = Math.floor(mcWidth / matrixFontSize);
+  matrixDrops = new Array(matrixCols).fill(1);
+}
+initMatrix();
+
+let resizeTimer;
 addEventListener('resize', function(){
-  matrixCols = Math.floor(mc.width / matrixFontSize);
-  matrixDrops = Array(matrixCols).fill(1);
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(initMatrix, 200);
 });
 
-function drawMatrix(){
+let lastMatrixTime = 0;
+const MATRIX_INTERVAL = 1000 / 30; // 30 FPS
+
+function drawMatrix(now){
+  requestAnimationFrame(drawMatrix);
+  
+  if (document.hidden) return;
+  if (now - lastMatrixTime < MATRIX_INTERVAL) return;
+  lastMatrixTime = now;
+
   mctx.fillStyle = 'rgba(3, 3, 8, 0.08)';
-  mctx.fillRect(0, 0, mc.width, mc.height);
+  mctx.fillRect(0, 0, mcWidth, mcHeight);
   mctx.font = matrixFontSize + 'px JetBrains Mono, monospace';
 
   for (let i = 0; i < matrixDrops.length; i++){
@@ -928,26 +803,21 @@ function drawMatrix(){
     const x = i * matrixFontSize;
     const y = matrixDrops[i] * matrixFontSize;
 
-    if (Math.random() > 0.975){
+    if (Math.random() > 0.985){
       mctx.fillStyle = '#ffffff';
-      mctx.shadowBlur = 15;
-      mctx.shadowColor = '#ff1e3c';
     } else {
       mctx.fillStyle = '#ff1e3c';
-      mctx.shadowBlur = 0;
     }
 
     mctx.fillText(text, x, y);
 
-    if (y > mc.height && Math.random() > 0.975){
+    if (y > mcHeight && Math.random() > 0.975){
       matrixDrops[i] = 0;
     }
     matrixDrops[i]++;
   }
-  mctx.shadowBlur = 0;
-  requestAnimationFrame(drawMatrix);
 }
-drawMatrix();
+requestAnimationFrame(drawMatrix);
 
 /* ============ TOAST ============ */
 const toast = document.getElementById('toast');
@@ -1016,7 +886,6 @@ async function tryUnlock(){
   gateMsg.style.color = '#70707f';
   gateMsg.textContent = '◈ Verifying...';
 
-  // ✅ اقرأ الرمز من Firestore
   let correctCode = null;
   try {
     const snap = await getDoc(doc(db, 'settings', 'config'));
@@ -1101,7 +970,6 @@ async function refreshAll(){
       users.push({ id: d.id, username: data.username || d.id, realName: data.realName || '' });
     });
 
-    // رتّب: Devil-0 أولاً
     users.sort(function(a, b){
       if (a.username.toLowerCase() === ADMIN_USER.toLowerCase()) return -1;
       if (b.username.toLowerCase() === ADMIN_USER.toLowerCase()) return 1;
@@ -1273,7 +1141,7 @@ document.getElementById('cmdSuspendUser').addEventListener('click', async functi
     '<label>Select Operator</label>' +
     '<select id="suspendUser">' + options + '</select>' +
     '<p style="color:#3a3a48;font-size:0.72rem;margin-top:1rem;line-height:1.6;">' +
-    'Suspended users can log in but see NO sections.<br>They will see "Account suspended".</p>' +
+    'Suspended users can log in but see NO sections.</p>' +
     '<div class="modal-btns">' +
     '<button class="cancel" id="mxCancel">Cancel</button>' +
     '<button class="ok" id="confirmSuspend">🚫 Suspend</button>' +
