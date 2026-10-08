@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABYSS · COMMAND CENTER</title>
+<style>
+  * { box-sizing: border-box; margin: 0; font-family: 'Courier New', monospace; }
+  body { background: #000; color: #ff6666; min-height: 100vh; }
+  #matrixCanvas { position: fixed; inset: 0; width: 100%; height: 100%;
+    z-index: 0; opacity: 0.2; pointer-events: none; }
+  body::before { content: ''; position: fixed; inset: 0;
+    background: radial-gradient(circle at center, rgba(255,0,0,0.08) 0%, rgba(0,0,0,0.95) 70%);
+    z-index: 1; pointer-events: none; }
+  #app { position: relative; z-index: 2; padding: 1rem;
+    max-width: 1100px; margin: 0 auto; }
+
+  .app-header { display: flex; align-items: center; justify-content: space-between;
+    padding: 0.8rem 1rem; margin-bottom: 1rem;
+    background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
+    border: 1px solid #ff0000; border-radius: 12px;
+    box-shadow: 0 0 20px rgba(255,0,0,0.3); flex-wrap: wrap; gap: 0.6rem; }
+  .app-title { font-size: 1rem; letter-spacing: 3px; color: #ff1a1a;
+    text-transform: uppercase; text-shadow: 0 0 10px #ff0000; }
+  .app-title span { color: #666; font-size: 0.6rem;
+    letter-spacing: 1px; display: block; margin-top: 2px; }
+  .user-info { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+  .user-badge { padding: 0.35rem 0.8rem; border: 1px solid #ff0000;
+    border-radius: 20px; background: rgba(255,0,0,0.1);
+    color: #ff6666; font-size: 0.7rem; letter-spacing: 2px;
+    text-transform: uppercase; }
+  .user-badge.admin { background: rgba(255,0,0,0.3);
+    color: #fff; box-shadow: 0 0 15px rgba(255,0,0,0.6); }
+  .logout-btn { padding: 0.35rem 0.8rem; border: 1px solid #ff0000;
+    border-radius: 20px; background: transparent; color: #ff6666;
+    cursor: pointer; font-size: 0.7rem; letter-spacing: 2px;
+    text-transform: uppercase; font-family: inherit;
+    transition: all 0.2s; }
+  .logout-btn:hover { background: #ff0000; color: #000; }
+
+  .admin-panel { display: none; background: rgba(10,0,0,0.85);
+    backdrop-filter: blur(10px); border: 1px solid #ff0000;
+    border-radius: 12px; padding: 1rem; margin-bottom: 1rem;
+    box-shadow: 0 0 20px rgba(255,0,0,0.2); }
+  .admin-panel.active { display: block; }
+  .admin-panel .row { display: flex; gap: 0.5rem; flex-wrap: wrap;
+    align-items: center; margin-bottom: 0.6rem; }
+  .admin-panel label { font-size: 0.65rem; color: #ff6666;
+    letter-spacing: 2px; text-transform: uppercase; display: block;
+    margin-bottom: 0.3rem; }
+  .admin-panel input { flex: 1; min-width: 120px;
+    padding: 0.6rem 0.8rem; background: rgba(0,0,0,0.7);
+    border: 1px solid #4d0000; border-radius: 8px;
+    color: #ffcccc; font-family: inherit; outline: none;
+    font-size: 0.85rem; }
+  .admin-panel input:focus { border-color: #ff0000;
+    box-shadow: 0 0 10px rgba(255,0,0,0.5); }
+  .admin-panel .emoji-input { max-width: 80px; text-align: center;
+    font-size: 1.2rem; }
+  .admin-panel button { padding: 0.6rem 1rem; background: #8b0000;
+    color: #fff; border: 1px solid #ff0000; border-radius: 8px;
+    cursor: pointer; font-family: inherit; letter-spacing: 1px;
+    font-size: 0.75rem; text-transform: uppercase;
+    transition: all 0.2s; }
+  .admin-panel button:hover { background: #ff0000;
+    box-shadow: 0 0 15px #ff0000; }
+  .admin-panel button:disabled { opacity: 0.5; cursor: wait; }
+  .admin-panel .hint { color: #661111; font-size: 0.65rem;
+    letter-spacing: 1px; margin-top: 0.3rem; }
+
+  .section-grid { display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1rem; }
+  .section-card { background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
+    border: 1px solid #ff0000; border-radius: 12px;
+    padding: 1.5rem 1rem; text-align: center; cursor: pointer;
+    transition: all 0.3s; box-shadow: 0 0 20px rgba(255,0,0,0.2);
+    text-decoration: none; color: inherit; display: block;
+    position: relative; }
+  .section-card:hover { transform: translateY(-5px);
+    box-shadow: 0 0 40px rgba(255,0,0,0.7); border-color: #ff1a1a; }
+  .section-card .icon { font-size: 2rem; margin-bottom: 0.6rem;
+    display: block; }
+  .section-card .name { font-size: 0.85rem; letter-spacing: 3px;
+    color: #ff1a1a; text-transform: uppercase; margin-bottom: 0.4rem;
+    font-weight: 700; }
+  .section-card .desc { font-size: 0.65rem; color: #661111;
+    letter-spacing: 1px; }
+
+  .section-card.empty { border-style: dashed; opacity: 0.6;
+    cursor: not-allowed; }
+  .section-card.empty:hover { transform: none;
+    box-shadow: 0 0 20px rgba(255,0,0,0.2); }
+  .section-card.empty .name { color: #661111; }
+  .section-card.empty .desc { color: #330000; font-style: italic; }
+
+  .section-card .delete-btn { position: absolute; top: 6px;
+    right: 6px; width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(0,0,0,0.7); border: 1px solid #ff0000;
+    color: #ff6666; font-size: 0.7rem; cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+    font-family: inherit; padding: 0; }
+  .section-card:hover .delete-btn.admin-visible { display: flex; }
+  .section-card .delete-btn:hover { background: #ff0000; color: #000; }
+</style>
+</head>
+<body>
+<canvas id="matrixCanvas"></canvas>
+
+<div id="app">
+  <div class="app-header">
+    <div class="app-title">ABYSS <span>COMMAND CENTER</span></div>
+    <div class="user-info">
+      <div class="user-badge" id="userBadge">—</div>
+      <button class="logout-btn" id="logoutBtn">⏻ Exit</button>
+    </div>
+  </div>
+
+  <!-- Admin: Add Section Panel -->
+  <div class="admin-panel" id="adminPanel">
+    <div style="font-size:0.7rem;color:#ff1a1a;letter-spacing:3px;
+      text-transform:uppercase;margin-bottom:0.8rem;
+      padding-bottom:0.5rem;border-bottom:1px solid rgba(255,0,0,0.3);">
+      ➕ Add New Section
+    </div>
+
+    <div class="row">
+      <div style="flex:0 0 70px;">
+        <label>Icon</label>
+        <input type="text" class="emoji-input" id="newIcon"
+          value="🔷" maxlength="4">
+      </div>
+      <div style="flex:1;min-width:150px;">
+        <label>Name</label>
+        <input type="text" id="newName" placeholder="e.g. Games"
+          maxlength="20" autocomplete="off">
+      </div>
+      <div style="flex:1;min-width:150px;">
+        <label>Description</label>
+        <input type="text" id="newDesc" placeholder="short description"
+          maxlength="40" autocomplete="off">
+      </div>
+      <div style="flex:1;min-width:150px;">
+        <label>URL (optional)</label>
+        <input type="text" id="newUrl" placeholder="games.html"
+          maxlength="60" autocomplete="off">
+      </div>
+    </div>
+
+    <div class="row" style="justify-content:flex-end;">
+      <button id="addSectionBtn">▸ Add Section</button>
+    </div>
+    <div class="hint">
+      ℹ Leave URL empty to add a placeholder section — you can edit the HTML later.
+    </div>
+  </div>
+
+  <div class="section-grid" id="sectionGrid"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, getDocs,
+  deleteDoc, doc, query, orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDFbzXgjiYqrizFNhd9sePmk04NQd0vZDQ",
+  authDomain: "storage-for-devil-abyss.firebaseapp.com",
+  projectId: "storage-for-devil-abyss",
+  storageBucket: "storage-for-devil-abyss.firebasestorage.app",
+  messagingSenderId: "45419287364",
+  appId: "1:45419287364:web:a81c0b6e133326eece7d11"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const ADMIN_USER = "Devil-0";
+
+/* ---------- Matrix BG ---------- */
+const canvas = document.getElementById('matrixCanvas');
+const ctx = canvas.getContext('2d');
+function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+resize(); addEventListener('resize', resize);
+const chars = 'アカサタナハマヤラワ0123456789ABCDEF';
+const fs = 14;
+const drops = Array(Math.floor(canvas.width / fs)).fill(1);
+setInterval(function(){
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#ff0000';
+  ctx.font = fs + 'px monospace';
+  for (let i=0;i<drops.length;i++){
+    const t = chars[Math.floor(Math.random()*chars.length)];
+    ctx.fillText(t, i*fs, drops[i]*fs);
+    if (drops[i]*fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}, 50);
+
+/* ---------- Auth ---------- */
+let currentUser = null;
+let isAdmin = false;
+
+onAuthStateChanged(auth, async function(user){
+  if (!user){
+    window.location.replace('index.html');
+    return;
+  }
+  const stored = sessionStorage.getItem('abyss_user');
+  currentUser = stored || user.email.split('@')[0];
+  isAdmin = (currentUser === ADMIN_USER);
+
+  const badge = document.getElementById('userBadge');
+  badge.textContent = currentUser + (isAdmin ? ' ★' : '');
+  if (isAdmin) badge.classList.add('admin');
+
+  if (isAdmin){
+    document.getElementById('adminPanel').classList.add('active');
+  }
+
+  await renderSections();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async function(){
+  sessionStorage.removeItem('abyss_user');
+  await signOut(auth);
+  window.location.replace('index.html');
+});
+
+/* ---------- Default sections (always shown) ---------- */
+const DEFAULT_SECTIONS = [
+  { name: 'Chat',  icon: '💬', desc: 'General chat',  url: 'chat.html',    default: true, order: 1 },
+  { name: 'Files', icon: '📁', desc: 'Image vault',   url: 'files.html',   default: true, order: 2 },
+  { name: 'Names', icon: '👤', desc: 'Account registry', url: 'accounts.html', default: true, order: 3 }
+];
+const ADMIN_SECTION = { name: 'Commands', icon: '🔒', desc: 'Admin center', url: 'admin.html', default: true, order: 99 };
+
+/* ---------- Render all sections ---------- */
+async function renderSections(){
+  const grid = document.getElementById('sectionGrid');
+  grid.innerHTML = '';
+
+  // 1. Load custom sections from Firestore
+  let custom = [];
+  try {
+    const snap = await getDocs(query(collection(db, 'sections'), orderBy('order', 'asc')));
+    snap.forEach(function(d){
+      custom.push(Object.assign({ id: d.id }, d.data()));
+    });
+  } catch (e){
+    console.error('Failed to load custom sections:', e);
+  }
+
+  // 2. Merge defaults + custom
+  const sections = DEFAULT_SECTIONS.slice();
+  custom.forEach(function(c){
+    sections.push(Object.assign({ default: false }, c));
+  });
+
+  // Sort by order
+  sections.sort(function(a, b){
+    return (a.order || 50) - (b.order || 50);
+  });
+
+  // 3. Add admin section at the end (only for Devil-0)
+  if (isAdmin){
+    sections.push(ADMIN_SECTION);
+  }
+
+  // 4. Render
+  sections.forEach(function(s){
+    const hasUrl = s.url && s.url.trim() !== '';
+
+    const card = document.createElement('a');
+    card.className = 'section-card';
+    if (!hasUrl) card.classList.add('empty');
+
+    // Only make it a clickable link if has URL
+    if (hasUrl){
+      card.href = s.url;
+    } else {
+      card.href = 'javascript:void(0)';
+      card.style.cursor = 'not-allowed';
+    }
+
+    card.innerHTML =
+      '<span class="icon">' + (s.icon || '🔷') + '</span>' +
+      '<div class="name">' + escapeHtml(s.name || 'Untitled') + '</div>' +
+      '<div class="desc">' + escapeHtml(s.desc || (hasUrl ? '' : 'empty — awaiting setup')) + '</div>';
+
+    // Delete button (only for custom sections + admin)
+    if (isAdmin && !s.default && s.id){
+      const del = document.createElement('button');
+      del.className = 'delete-btn admin-visible';
+      del.textContent = '✕';
+      del.title = 'Delete section';
+      del.addEventListener('click', async function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        if (!confirm('Delete section "' + s.name + '"?')) return;
+        try {
+          await deleteDoc(doc(db, 'sections', s.id));
+          await renderSections();
+        } catch(err){
+          console.error(err);
+          alert('Failed to delete: ' + err.message);
+        }
+      });
+      card.appendChild(del);
+    }
+
+    grid.appendChild(card);
+  });
+}
+
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+
+/* ---------- Add new section ---------- */
+document.getElementById('addSectionBtn').addEventListener('click', async function(){
+  if (!isAdmin) return;
+
+  const icon = document.getElementById('newIcon').value.trim() || '🔷';
+  const name = document.getElementById('newName').value.trim();
+  const desc = document.getElementById('newDesc').value.trim();
+  const url  = document.getElementById('newUrl').value.trim();
+
+  if (!name){
+    alert('⚠ Section name is required');
+    return;
+  }
+
+  const btn = this;
+  btn.disabled = true;
+  btn.textContent = '◈ adding...';
+
+  try {
+    // Determine order: max existing + 10
+    const snap = await getDocs(collection(db, 'sections'));
+    let maxOrder = 10;
+    snap.forEach(function(d){
+      const o = d.data().order || 0;
+      if (o > maxOrder) maxOrder = o;
+    });
+
+    await addDoc(collection(db, 'sections'), {
+      icon: icon,
+      name: name,
+      desc: desc,
+      url: url,          // may be empty
+      order: maxOrder + 10,
+      owner: currentUser,
+      createdAt: Date.now()
+    });
+
+    // Clear inputs
+    document.getElementById('newIcon').value = '🔷';
+    document.getElementById('newName').value = '';
+    document.getElementById('newDesc').value = '';
+    document.getElementById('newUrl').value = '';
+
+    await renderSections();
+  } catch (e){
+    console.error(e);
+    alert('Failed to add section: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▸ Add Section';
+});
+</script>
+</body>
+</html>

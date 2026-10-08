@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABYSS · FILES</title>
+<style>
+  * { box-sizing: border-box; margin: 0; font-family: 'Courier New', monospace; }
+  body { background: #000; color: #ff6666; min-height: 100vh; overflow-x: hidden; }
+  #matrixCanvas { position: fixed; inset: 0; width: 100%; height: 100%;
+    z-index: 0; opacity: 0.2; pointer-events: none; }
+  body::before { content: ''; position: fixed; inset: 0;
+    background: radial-gradient(circle at center, rgba(255,0,0,0.08) 0%, rgba(0,0,0,0.95) 70%);
+    z-index: 1; pointer-events: none; }
+  #app { position: relative; z-index: 2; padding: 0.8rem; max-width: 1100px; margin: 0 auto; }
+
+  .top-bar { display: flex; align-items: center; justify-content: space-between;
+    padding: 0.7rem 1rem; margin-bottom: 0.8rem;
+    background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
+    border: 1px solid #ff0000; border-radius: 12px;
+    box-shadow: 0 0 20px rgba(255,0,0,0.3); flex-wrap: wrap; gap: 0.5rem; }
+  .top-bar h2 { font-size: 0.9rem; letter-spacing: 3px; color: #ff1a1a;
+    text-transform: uppercase; text-shadow: 0 0 10px #ff0000; }
+  .back-btn, .logout-btn { padding: 0.35rem 0.8rem; border: 1px solid #ff0000;
+    border-radius: 20px; background: transparent; color: #ff6666;
+    cursor: pointer; font-size: 0.7rem; letter-spacing: 2px;
+    text-transform: uppercase; font-family: inherit;
+    transition: all 0.2s; text-decoration: none; }
+  .back-btn:hover, .logout-btn:hover { background: #ff0000;
+    color: #000; box-shadow: 0 0 15px #ff0000; }
+
+  .card { background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
+    border: 1px solid #ff0000; border-radius: 12px;
+    padding: 1.2rem; box-shadow: 0 0 20px rgba(255,0,0,0.2); margin-bottom: 0.8rem; }
+  .card-title { font-size: 0.8rem; letter-spacing: 3px; color: #ff1a1a;
+    text-transform: uppercase; margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,0,0,0.3);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 0.5rem; }
+  .card-title .stats { font-size: 0.65rem; color: #991111;
+    letter-spacing: 1px; text-transform: none; }
+
+  .upload-zone { border: 2px dashed #ff0000; border-radius: 12px;
+    padding: 2rem 1rem; text-align: center; cursor: pointer;
+    transition: all 0.3s; background: rgba(255,0,0,0.03); }
+  .upload-zone:hover, .upload-zone.dragover {
+    background: rgba(255,0,0,0.1); box-shadow: 0 0 25px rgba(255,0,0,0.5);
+    border-color: #ff1a1a; }
+  .upload-zone .icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
+  .upload-zone .label { font-size: 0.8rem; color: #ff6666;
+    letter-spacing: 2px; text-transform: uppercase; }
+  .upload-zone .hint { font-size: 0.65rem; color: #661111;
+    margin-top: 0.4rem; letter-spacing: 1px; }
+
+  .progress-bar { display: none; margin-top: 0.8rem; height: 6px;
+    background: rgba(0,0,0,0.6); border-radius: 3px;
+    overflow: hidden; border: 1px solid #4d0000; }
+  .progress-bar.active { display: block; }
+  .progress-bar .fill { height: 100%; background: #ff0000; width: 0%;
+    transition: width 0.2s; box-shadow: 0 0 10px #ff0000; }
+
+  .files-grid { display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.7rem; }
+  .file-item { background: rgba(0,0,0,0.6); border: 1px solid #ff0000;
+    border-radius: 10px; padding: 0.6rem; text-align: center;
+    font-size: 0.7rem; color: #ff9999; word-break: break-word;
+    transition: all 0.2s; position: relative; overflow: hidden; }
+  .file-item:hover { box-shadow: 0 0 20px rgba(255,0,0,0.6);
+    transform: translateY(-2px); }
+  .file-item .preview { width: 100%; height: 120px; border-radius: 6px;
+    border: 1px solid #4d0000; margin-bottom: 0.5rem;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; cursor: pointer; }
+  .file-item .preview img { width: 100%; height: 100%; object-fit: cover; }
+  .file-item .preview .ext { font-size: 1.5rem; color: #ff1a1a;
+    font-weight: 700; letter-spacing: 1px; text-shadow: 0 0 10px #ff0000; }
+  .file-item .name { font-size: 0.7rem; color: #ffcccc;
+    margin-bottom: 0.2rem; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; }
+  .file-item .meta { font-size: 0.6rem; color: #661111;
+    margin-bottom: 0.4rem; letter-spacing: 1px; }
+  .file-item .actions { display: flex; gap: 0.3rem; justify-content: center; }
+  .file-item .actions button, .file-item .actions a {
+    padding: 0.25rem 0.5rem; font-size: 0.6rem;
+    background: transparent; border: 1px solid #ff0000;
+    color: #ff6666; border-radius: 4px; cursor: pointer;
+    font-family: inherit; text-decoration: none; transition: all 0.2s; }
+  .file-item .actions button:hover, .file-item .actions a:hover {
+    background: #ff0000; color: #000; }
+
+  .empty-msg { text-align: center; color: #661111;
+    padding: 2.5rem 1rem; font-size: 0.8rem;
+    letter-spacing: 2px; text-transform: uppercase;
+    grid-column: 1 / -1; }
+
+  #lightbox { display: none; position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,0.95); align-items: center;
+    justify-content: center; padding: 1rem; }
+  #lightbox.active { display: flex; flex-direction: column; gap: 1rem; }
+  #lightbox img { max-width: 95vw; max-height: 80vh;
+    border: 2px solid #ff0000; border-radius: 8px;
+    box-shadow: 0 0 40px rgba(255,0,0,0.8); }
+  #lightbox .lb-close { padding: 0.6rem 1.5rem;
+    background: #8b0000; color: #fff; border: 1px solid #ff0000;
+    border-radius: 8px; cursor: pointer; font-family: inherit;
+    letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; }
+  #lightbox .lb-close:hover { background: #ff0000; }
+
+  #toast { position: fixed; top: 1rem; left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    padding: 0.8rem 1.5rem; background: rgba(10,0,0,0.95);
+    border: 1px solid #ff0000; border-radius: 8px;
+    color: #ffcccc; font-size: 0.85rem; letter-spacing: 1px;
+    z-index: 500; transition: transform 0.3s;
+    box-shadow: 0 0 20px rgba(255,0,0,0.6); }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { border-color: #00ff44; color: #00ff88;
+    box-shadow: 0 0 20px rgba(0,255,68,0.6); }
+  #toast.error { border-color: #ff0000; color: #ff4444; }
+</style>
+</head>
+<body>
+<canvas id="matrixCanvas"></canvas>
+
+<div id="app" style="display:none;">
+  <div class="top-bar">
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <a class="back-btn" href="dashboard.html">← Back</a>
+      <h2>◈ File Vault</h2>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <span id="userBadge" style="padding:0.35rem 0.8rem;border:1px solid #ff0000;border-radius:20px;
+        background:rgba(255,0,0,0.1);color:#ff6666;font-size:0.7rem;letter-spacing:2px;"></span>
+      <button class="logout-btn" id="logoutBtn">⏻ Exit</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      ◈ Upload Zone
+      <span class="stats" id="stats">0 files</span>
+    </div>
+    <div class="upload-zone" id="uploadZone">
+      <span class="icon">📁</span>
+      <div class="label">Click or Drop Images Here</div>
+      <div class="hint">stored on ImgBB · unlimited · max 10 MB per image</div>
+    </div>
+    <input type="file" id="fileInput" multiple accept="image/*" style="display:none">
+    <div class="progress-bar" id="progressBar">
+      <div class="fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">◈ Vault Contents</div>
+    <div class="files-grid" id="filesGrid">
+      <div class="empty-msg">◈ loading... ◈</div>
+    </div>
+  </div>
+</div>
+
+<div id="lightbox">
+  <img id="lightboxImg" src="" alt="">
+  <button class="lb-close" onclick="document.getElementById('lightbox').classList.remove('active')">✕ Close</button>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, getDocs,
+  deleteDoc, doc, query, orderBy
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDFbzXgjiYqrizFNhd9sePmk04NQd0vZDQ",
+  authDomain: "storage-for-devil-abyss.firebaseapp.com",
+  projectId: "storage-for-devil-abyss",
+  storageBucket: "storage-for-devil-abyss.firebasestorage.app",
+  messagingSenderId: "45419287364",
+  appId: "1:45419287364:web:a81c0b6e133326eece7d11"
+};
+
+/* ============================================================
+   ImgBB API Key
+   ============================================================ */
+const IMGBB_API_KEY = "98f875ce16259f1162f59f8da017a85e";
+const IMGBB_UPLOAD_URL = "https://api.imgbb.com/1/upload";
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const ADMIN_USER = "Devil-0";
+
+/* ---------- Matrix BG ---------- */
+const canvas = document.getElementById('matrixCanvas');
+const ctx = canvas.getContext('2d');
+function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+resize(); addEventListener('resize', resize);
+const chars = 'アカサタナハマヤラワ0123456789ABCDEF';
+const fs = 14;
+const drops = Array(Math.floor(canvas.width / fs)).fill(1);
+setInterval(function(){
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#ff0000';
+  ctx.font = fs + 'px monospace';
+  for (let i=0;i<drops.length;i++){
+    const t = chars[Math.floor(Math.random()*chars.length)];
+    ctx.fillText(t, i*fs, drops[i]*fs);
+    if (drops[i]*fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}, 50);
+
+/* ---------- Toast ---------- */
+const toast = document.getElementById('toast');
+let toastTimer;
+function showToast(msg, type){
+  toast.textContent = msg;
+  toast.className = 'show ' + (type || '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ toast.className = (type || ''); }, 2500);
+}
+
+/* ---------- Auth ---------- */
+let currentUser = null;
+let isAdmin = false;
+
+onAuthStateChanged(auth, function(user){
+  if (!user){
+    window.location.replace('index.html');
+    return;
+  }
+  const stored = sessionStorage.getItem('abyss_user');
+  currentUser = stored || user.email.split('@')[0];
+  isAdmin = (currentUser === ADMIN_USER);
+
+  document.getElementById('userBadge').textContent = currentUser + (isAdmin ? ' ★' : '');
+  document.getElementById('app').style.display = 'block';
+
+  renderFiles();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async function(){
+  sessionStorage.removeItem('abyss_user');
+  await signOut(auth);
+  window.location.replace('index.html');
+});
+
+/* ---------- UI refs ---------- */
+const uploadZone = document.getElementById('uploadZone');
+const fileInput = document.getElementById('fileInput');
+const filesGrid = document.getElementById('filesGrid');
+const progressBar = document.getElementById('progressBar');
+const progressFill = document.getElementById('progressFill');
+const stats = document.getElementById('stats');
+
+/* ---------- Helpers ---------- */
+function formatBytes(b){
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  return (b/1024/1024).toFixed(2) + ' MB';
+}
+function formatTime(ts){
+  const d = new Date(ts);
+  return d.toLocaleString();
+}
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+
+/* ---------- Upload to ImgBB ---------- */
+async function uploadToImgBB(file, onProgress){
+  const formData = new FormData();
+  formData.append('image', file);
+
+  return new Promise(function(resolve, reject){
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', IMGBB_UPLOAD_URL + '?key=' + IMGBB_API_KEY);
+
+    xhr.upload.onprogress = function(e){
+      if (e.lengthComputable && onProgress){
+        onProgress(Math.round(e.loaded / e.total * 100));
+      }
+    };
+
+    xhr.onload = function(){
+      if (xhr.status >= 200 && xhr.status < 300){
+        try {
+          const res = JSON.parse(xhr.responseText);
+          if (res.success && res.data){
+            resolve({
+              url: res.data.url,
+              thumb: res.data.thumb ? res.data.thumb.url : res.data.url,
+              deleteUrl: res.data.delete_url || '',
+              size: res.data.size || file.size,
+              name: res.data.title || file.name
+            });
+          } else {
+            reject(new Error('ImgBB upload failed'));
+          }
+        } catch(e){
+          reject(e);
+        }
+      } else {
+        reject(new Error('HTTP ' + xhr.status));
+      }
+    };
+
+    xhr.onerror = function(){ reject(new Error('network error')); };
+    xhr.send(formData);
+  });
+}
+
+/* ---------- Upload handler ---------- */
+async function handleFiles(fileList){
+  const files = Array.from(fileList).filter(function(f){
+    return f.type.startsWith('image/');
+  });
+
+  if (!files.length){
+    showToast('⚠ only images allowed', 'error');
+    return;
+  }
+
+  // Check 10 MB
+  for (const f of files){
+    if (f.size > 10 * 1024 * 1024){
+      showToast('⚠ ' + f.name + ' exceeds 10 MB', 'error');
+      return;
+    }
+  }
+
+  progressBar.classList.add('active');
+  progressFill.style.width = '0%';
+
+  let done = 0;
+  for (const file of files){
+    try {
+      const result = await uploadToImgBB(file, function(p){
+        const overall = Math.round((done + p/100) / files.length * 100);
+        progressFill.style.width = overall + '%';
+      });
+
+      await addDoc(collection(db, 'files'), {
+        name: result.name,
+        url: result.url,
+        thumb: result.thumb,
+        deleteUrl: result.deleteUrl,
+        size: result.size,
+        owner: currentUser,
+        time: Date.now()
+      });
+
+      done++;
+    } catch (err){
+      console.error('Upload failed:', file.name, err);
+      showToast('✗ ' + file.name + ' failed', 'error');
+    }
+  }
+
+  progressFill.style.width = '100%';
+  setTimeout(function(){
+    progressBar.classList.remove('active');
+    progressFill.style.width = '0%';
+  }, 400);
+
+  showToast('✓ uploaded ' + done + ' file' + (done === 1 ? '' : 's'), 'success');
+  await renderFiles();
+}
+
+/* ---------- Render files ---------- */
+async function renderFiles(){
+  try {
+    const q = query(collection(db, 'files'), orderBy('time', 'desc'));
+    const snap = await getDocs(q);
+
+    filesGrid.innerHTML = '';
+
+    if (snap.empty){
+      filesGrid.innerHTML = '<div class="empty-msg">◈ no files yet — upload something ◈</div>';
+      stats.textContent = '0 files';
+      return;
+    }
+
+    let count = 0;
+    let totalBytes = 0;
+
+    snap.forEach(function(d){
+      const f = d.data();
+      count++;
+      totalBytes += f.size || 0;
+
+      const item = document.createElement('div');
+      item.className = 'file-item';
+
+      const preview = document.createElement('div');
+      preview.className = 'preview';
+      const img = document.createElement('img');
+      img.src = f.thumb || f.url;
+      img.alt = f.name;
+      img.loading = 'lazy';
+      img.addEventListener('click', function(){
+        document.getElementById('lightboxImg').src = f.url;
+        document.getElementById('lightbox').classList.add('active');
+      });
+      preview.appendChild(img);
+
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = f.name || 'image';
+      name.title = f.name || '';
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = formatBytes(f.size || 0) + ' · ' + (f.owner || '?');
+
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+
+      const open = document.createElement('a');
+      open.textContent = '🔗';
+      open.href = f.url;
+      open.target = '_blank';
+      open.title = 'Open';
+
+      const del = document.createElement('button');
+      del.textContent = '✕';
+      del.title = 'Remove from vault';
+      del.addEventListener('click', async function(){
+        if (!confirm('Remove "' + (f.name||'image') + '" from the vault?\n(note: it will stay on ImgBB)')) return;
+        try {
+          await deleteDoc(doc(db, 'files', d.id));
+          showToast('✓ removed from vault', 'success');
+          await renderFiles();
+        } catch(e){
+          showToast('✗ failed to remove', 'error');
+        }
+      });
+
+      actions.appendChild(open);
+
+      // Only owner or admin can delete
+      if (f.owner === currentUser || isAdmin){
+        actions.appendChild(del);
+      }
+
+      item.appendChild(preview);
+      item.appendChild(name);
+      item.appendChild(meta);
+      item.appendChild(actions);
+      filesGrid.appendChild(item);
+    });
+
+    stats.textContent = count + ' file' + (count === 1 ? '' : 's') + ' · ' + formatBytes(totalBytes);
+  } catch (e){
+    console.error(e);
+    filesGrid.innerHTML = '<div class="empty-msg">⚠ failed to load files</div>';
+  }
+}
+
+/* ---------- Events ---------- */
+uploadZone.addEventListener('click', function(){ fileInput.click(); });
+fileInput.addEventListener('change', function(e){
+  handleFiles(e.target.files);
+  fileInput.value = '';
+});
+
+['dragenter','dragover'].forEach(function(ev){
+  uploadZone.addEventListener(ev, function(e){
+    e.preventDefault(); e.stopPropagation();
+    uploadZone.classList.add('dragover');
+  });
+});
+['dragleave','drop'].forEach(function(ev){
+  uploadZone.addEventListener(ev, function(e){
+    e.preventDefault(); e.stopPropagation();
+    uploadZone.classList.remove('dragover');
+  });
+});
+uploadZone.addEventListener('drop', function(e){
+  if (e.dataTransfer.files) handleFiles(e.dataTransfer.files);
+});
+
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape'){
+    document.getElementById('lightbox').classList.remove('active');
+  }
+});
+</script>
+</body>
+</html>

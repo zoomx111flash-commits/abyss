@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABYSS · CHAT</title>
+<style>
+  * { box-sizing: border-box; margin: 0; font-family: 'Courier New', monospace; }
+  body { background: #000; color: #ff6666; min-height: 100vh; overflow-x: hidden; }
+  #matrixCanvas { position: fixed; inset: 0; width: 100%; height: 100%;
+    z-index: 0; opacity: 0.2; pointer-events: none; }
+  body::before { content: ''; position: fixed; inset: 0;
+    background: radial-gradient(circle at center, rgba(255,0,0,0.08) 0%, rgba(0,0,0,0.95) 70%);
+    z-index: 1; pointer-events: none; }
+  #app { position: relative; z-index: 2; padding: 0.8rem; max-width: 1000px; margin: 0 auto; }
+
+  .top-bar { display: flex; align-items: center; justify-content: space-between;
+    padding: 0.7rem 1rem; margin-bottom: 0.8rem;
+    background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
+    border: 1px solid #ff0000; border-radius: 12px;
+    box-shadow: 0 0 20px rgba(255,0,0,0.3); flex-wrap: wrap; gap: 0.5rem; }
+  .top-bar h2 { font-size: 0.9rem; letter-spacing: 3px; color: #ff1a1a;
+    text-transform: uppercase; text-shadow: 0 0 10px #ff0000; }
+  .back-btn, .logout-btn { padding: 0.35rem 0.8rem; border: 1px solid #ff0000;
+    border-radius: 20px; background: transparent; color: #ff6666;
+    cursor: pointer; font-size: 0.7rem; letter-spacing: 2px;
+    text-transform: uppercase; font-family: inherit;
+    transition: all 0.2s; text-decoration: none; }
+  .back-btn:hover, .logout-btn:hover { background: #ff0000;
+    color: #000; box-shadow: 0 0 15px #ff0000; }
+
+  .card { background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
+    border: 1px solid #ff0000; border-radius: 12px;
+    padding: 1.2rem; box-shadow: 0 0 20px rgba(255,0,0,0.2); }
+  .card-title { font-size: 0.8rem; letter-spacing: 3px; color: #ff1a1a;
+    text-transform: uppercase; margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,0,0,0.3);
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 0.5rem; }
+  .card-title .points { font-size: 0.65rem; color: #991111;
+    letter-spacing: 1px; text-transform: none; }
+  .card-title .points.warn { color: #ff6666; }
+  .card-title .points.full { color: #ff0000; font-weight: 700;
+    animation: pulsePts 1s infinite; }
+  @keyframes pulsePts { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  .chat-box { height: 55vh; min-height: 280px; overflow-y: auto;
+    background: rgba(0,0,0,0.5); border: 1px solid #4d0000;
+    border-radius: 8px; padding: 0.8rem; margin-bottom: 0.6rem;
+    scrollbar-width: thin; scrollbar-color: #ff0000 #1a0000; }
+  .chat-box::-webkit-scrollbar { width: 6px; }
+  .chat-box::-webkit-scrollbar-track { background: #1a0000; }
+  .chat-box::-webkit-scrollbar-thumb { background: #ff0000; border-radius: 3px; }
+
+  .chat-msg { padding: 0.6rem 0.8rem; margin-bottom: 0.5rem;
+    border-left: 2px solid #ff0000; border-radius: 4px;
+    background: rgba(255,0,0,0.05); font-size: 0.8rem; word-break: break-word; }
+  .chat-msg .header { display: flex; justify-content: space-between;
+    align-items: baseline; margin-bottom: 0.3rem;
+    gap: 0.5rem; flex-wrap: wrap; }
+  .chat-msg .author { color: #ff1a1a; font-weight: 700;
+    letter-spacing: 1px; text-shadow: 0 0 6px rgba(255,0,0,0.5); }
+  .chat-msg .time { color: #661111; font-size: 0.65rem; }
+  .chat-msg .content { color: #ffcccc; margin-top: 0.2rem; white-space: pre-wrap; }
+  .chat-msg img { max-width: 200px; max-height: 200px;
+    border: 1px solid #ff0000; border-radius: 4px;
+    margin-top: 0.4rem; display: block; cursor: pointer; }
+
+  .empty-msg { text-align: center; color: #661111;
+    padding: 2rem; font-size: 0.8rem; }
+
+  .chat-input-row { display: flex; gap: 0.4rem; align-items: flex-start; flex-wrap: wrap; }
+  .chat-input-row input[type="text"] { flex: 1; padding: 0.7rem 0.9rem;
+    background: rgba(0,0,0,0.7); border: 1px solid #4d0000;
+    border-radius: 8px; color: #ffcccc; font-family: inherit;
+    outline: none; font-size: 0.85rem; min-width: 150px; }
+  .chat-input-row input[type="text"]:focus { border-color: #ff0000;
+    box-shadow: 0 0 10px rgba(255,0,0,0.5); }
+  .chat-input-row button { padding: 0.7rem 1rem; background: #8b0000;
+    color: #fff; border: 1px solid #ff0000; border-radius: 8px;
+    cursor: pointer; letter-spacing: 1px; font-family: inherit;
+    transition: all 0.2s; font-size: 0.8rem; }
+  .chat-input-row button:hover { background: #ff0000;
+    box-shadow: 0 0 15px #ff0000; }
+  .chat-input-row button:disabled { opacity: 0.4; cursor: wait; }
+  .file-btn { padding: 0.7rem; background: rgba(0,0,0,0.7);
+    color: #ff6666; border: 1px solid #4d0000; border-radius: 8px;
+    cursor: pointer; font-family: inherit; transition: all 0.2s;
+    font-size: 0.9rem; display: inline-flex; align-items: center;
+    justify-content: center; }
+  .file-btn:hover { border-color: #ff0000; color: #ff1a1a;
+    box-shadow: 0 0 10px rgba(255,0,0,0.5); }
+
+  .char-counter { font-size: 0.65rem; color: #661111;
+    letter-spacing: 1px; padding: 0.5rem 0.6rem;
+    border: 1px solid #4d0000; border-radius: 6px;
+    background: rgba(0,0,0,0.5); align-self: center;
+    min-width: 70px; text-align: center; }
+  .char-counter.warn { color: #ff6666; border-color: #ff0000; }
+  .char-counter.over { color: #ff0000; font-weight: 700;
+    animation: pulsePts 0.8s infinite; }
+
+  .preview-row { display: none; align-items: center; gap: 0.5rem;
+    padding: 0.5rem; margin-bottom: 0.5rem;
+    background: rgba(255,0,0,0.05); border: 1px solid #4d0000;
+    border-radius: 8px; }
+  .preview-row.active { display: flex; }
+  .preview-row img { max-height: 60px; max-width: 60px;
+    border: 1px solid #ff0000; border-radius: 4px; }
+  .preview-row .info { flex: 1; font-size: 0.7rem; color: #ff6666; }
+  .preview-row .remove { padding: 0.3rem 0.6rem; background: transparent;
+    border: 1px solid #ff0000; color: #ff6666; border-radius: 4px;
+    cursor: pointer; font-family: inherit; font-size: 0.7rem; }
+  .preview-row .remove:hover { background: #ff0000; color: #000; }
+
+  #lightbox { display: none; position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,0.95); align-items: center;
+    justify-content: center; padding: 1rem; }
+  #lightbox.active { display: flex; flex-direction: column; gap: 1rem; }
+  #lightbox img { max-width: 95vw; max-height: 80vh;
+    border: 2px solid #ff0000; border-radius: 8px;
+    box-shadow: 0 0 40px rgba(255,0,0,0.8); }
+  #lightbox .lb-close { padding: 0.6rem 1.5rem;
+    background: #8b0000; color: #fff; border: 1px solid #ff0000;
+    border-radius: 8px; cursor: pointer; font-family: inherit;
+    letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; }
+  #lightbox .lb-close:hover { background: #ff0000; }
+</style>
+</head>
+<body>
+<canvas id="matrixCanvas"></canvas>
+
+<div id="app">
+  <div class="top-bar">
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <a class="back-btn" href="dashboard.html">← Back</a>
+      <h2>◈ General Chat</h2>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <span id="userBadge" style="padding:0.35rem 0.8rem;border:1px solid #ff0000;border-radius:20px;
+        background:rgba(255,0,0,0.1);color:#ff6666;font-size:0.7rem;letter-spacing:2px;"></span>
+      <button class="logout-btn" id="logoutBtn">⏻ Exit</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      ◈ Encrypted Channel
+      <span class="points" id="pointsInfo">0 / 500 points</span>
+    </div>
+
+    <div class="chat-box" id="chatBox">
+      <div class="empty-msg">◈ loading messages... ◈</div>
+    </div>
+
+    <div class="preview-row" id="previewRow">
+      <img id="previewImg" src="" alt="">
+      <div class="info" id="previewInfo"></div>
+      <button class="remove" id="previewRemove">✕ Remove</button>
+    </div>
+
+    <div class="chat-input-row">
+      <label class="file-btn" for="chatFileInput" title="Attach image (10 pts)">📎</label>
+      <input type="file" id="chatFileInput" style="display:none" accept="image/*">
+      <input type="text" id="chatInput" placeholder="type a message (max 350)..." autocomplete="off" maxlength="350">
+      <span class="char-counter" id="charCounter">0 / 350</span>
+      <button id="chatSend">▸ Send</button>
+    </div>
+  </div>
+</div>
+
+<div id="lightbox">
+  <img id="lightboxImg" src="" alt="">
+  <button class="lb-close" onclick="document.getElementById('lightbox').classList.remove('active')">✕ Close</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, getDocs }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDFbzXgjiYqrizFNhd9sePmk04NQd0vZDQ",
+  authDomain: "storage-for-devil-abyss.firebaseapp.com",
+  projectId: "storage-for-devil-abyss",
+  storageBucket: "storage-for-devil-abyss.firebasestorage.app",
+  messagingSenderId: "45419287364",
+  appId: "1:45419287364:web:a81c0b6e133326eece7d11"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ---------- Point system ---------- */
+const MAX_POINTS = 500;
+const IMG_POINTS = 10;
+const EMOJI_POINTS = 5;
+const MAX_CHARS = 350;
+
+/* ---------- Current user ---------- */
+let currentUser = null;
+
+/* ---------- DOM refs ---------- */
+const chatBox = document.getElementById('chatBox');
+const chatInput = document.getElementById('chatInput');
+const chatSend = document.getElementById('chatSend');
+const chatFileInput = document.getElementById('chatFileInput');
+const charCounter = document.getElementById('charCounter');
+const pointsInfo = document.getElementById('pointsInfo');
+const userBadge = document.getElementById('userBadge');
+const previewRow = document.getElementById('previewRow');
+const previewImg = document.getElementById('previewImg');
+const previewInfo = document.getElementById('previewInfo');
+const previewRemove = document.getElementById('previewRemove');
+
+let pendingImage = null;
+
+/* ---------- Matrix BG ---------- */
+const canvas = document.getElementById('matrixCanvas');
+const ctx = canvas.getContext('2d');
+function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+resize(); addEventListener('resize', resize);
+const chars = 'アカサタナハマヤラワ0123456789ABCDEF';
+const fs = 14;
+const drops = Array(Math.floor(canvas.width / fs)).fill(1);
+setInterval(function(){
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#ff0000';
+  ctx.font = fs + 'px monospace';
+  for (let i=0;i<drops.length;i++){
+    const t = chars[Math.floor(Math.random()*chars.length)];
+    ctx.fillText(t, i*fs, drops[i]*fs);
+    if (drops[i]*fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}, 50);
+
+/* ---------- Auth check ---------- */
+onAuthStateChanged(auth, function(user){
+  if (!user){
+    window.location.replace('index.html');
+    return;
+  }
+  const stored = sessionStorage.getItem('abyss_user');
+  currentUser = stored || user.email.split('@')[0];
+  userBadge.textContent = currentUser;
+
+  if (stored) sessionStorage.setItem('abyss_user', stored);
+  loadMessages();
+});
+
+/* ---------- Logout ---------- */
+document.getElementById('logoutBtn').addEventListener('click', async function(){
+  sessionStorage.removeItem('abyss_user');
+  await signOut(auth);
+  window.location.replace('index.html');
+});
+
+/* ---------- Helpers ---------- */
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+
+const EMOJI_REGEX = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F000}-\u{1F02F}\u{1F0A0}-\u{1F0FF}\u{1F100}-\u{1F2FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}\u{2190}-\u{21FF}\u{2300}-\u{23FF}\u{2B00}-\u{2BFF}\u{FE0F}\u{200D}]/gu;
+
+function countEmojis(str){
+  const m = String(str||'').match(EMOJI_REGEX);
+  return m ? m.length : 0;
+}
+
+function pointsForText(text){
+  const t = String(text||'');
+  const emojiCount = countEmojis(t);
+  const normalChars = t.length - emojiCount;
+  return normalChars * 1 + emojiCount * EMOJI_POINTS;
+}
+
+function pointsForMessage(msg){
+  let pts = 0;
+  if (msg.text) pts += pointsForText(msg.text);
+  if (msg.image) pts += IMG_POINTS;
+  return pts;
+}
+
+function totalPoints(msgs){
+  return msgs.reduce(function(s, m){ return s + pointsForMessage(m); }, 0);
+}
+
+function formatTime(ts){
+  const d = new Date(ts);
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return sameDay ? time : d.toLocaleDateString() + ' ' + time;
+}
+
+/* ---------- Live listen to messages ---------- */
+let allMessages = [];
+
+function loadMessages(){
+  const q = query(collection(db, 'messages'), orderBy('time', 'asc'));
+  onSnapshot(q, function(snap){
+    allMessages = [];
+    snap.forEach(function(d){
+      allMessages.push(Object.assign({ id: d.id }, d.data()));
+    });
+    renderChat();
+  }, function(err){
+    console.error('Firestore error:', err);
+    chatBox.innerHTML = '<div class="empty-msg">⚠ failed to load messages</div>';
+  });
+}
+
+function renderChat(){
+  chatBox.innerHTML = '';
+  if (!allMessages.length){
+    chatBox.innerHTML = '<div class="empty-msg">◈ no messages yet — be the first ◈</div>';
+    updatePoints();
+    return;
+  }
+
+  allMessages.forEach(function(m){
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    let inner = '<div class="header">' +
+                  '<span class="author">' + escapeHtml(m.author) + '</span>' +
+                  '<span class="time">' + formatTime(m.time) + '</span>' +
+                '</div>';
+    if (m.text){
+      inner += '<div class="content">' + escapeHtml(m.text) + '</div>';
+    }
+    if (m.image){
+      inner += '<img src="' + m.image + '" alt="image" data-img="1">';
+    }
+    div.innerHTML = inner;
+    chatBox.appendChild(div);
+  });
+
+  // lightbox
+  chatBox.querySelectorAll('img[data-img]').forEach(function(img){
+    img.addEventListener('click', function(){
+      document.getElementById('lightboxImg').src = img.src;
+      document.getElementById('lightbox').classList.add('active');
+    });
+  });
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+  updatePoints();
+}
+
+function updatePoints(){
+  const total = totalPoints(allMessages);
+  pointsInfo.textContent = total + ' / ' + MAX_POINTS + ' points';
+  pointsInfo.classList.remove('warn','full');
+  if (total >= MAX_POINTS) pointsInfo.classList.add('full');
+  else if (total >= MAX_POINTS * 0.75) pointsInfo.classList.add('warn');
+}
+
+/* ---------- Send ---------- */
+async function sendMessage(){
+  const text = chatInput.value.trim();
+  if (!text && !pendingImage) return;
+  if (text.length > MAX_CHARS){
+    alert('⚠ Message too long (' + text.length + '/' + MAX_CHARS + ')');
+    return;
+  }
+
+  chatSend.disabled = true;
+
+  try {
+    await addDoc(collection(db, 'messages'), {
+      author: currentUser,
+      text: text,
+      image: pendingImage ? pendingImage.data : null,
+      time: Date.now()
+    });
+
+    // Trim oldest if over MAX_POINTS
+    const total = totalPoints(allMessages);
+    if (total > MAX_POINTS && allMessages.length > 1){
+      // delete oldest
+      const oldest = allMessages[0];
+      if (oldest && oldest.id){
+        try { await deleteDoc(doc(db, 'messages', oldest.id)); } catch(e){}
+      }
+    }
+
+    chatInput.value = '';
+    updateCharCounter();
+    clearPreview();
+  } catch (err){
+    console.error(err);
+    alert('⚠ Failed to send: ' + err.message);
+  }
+
+  chatSend.disabled = false;
+}
+
+/* ---------- Char counter ---------- */
+function updateCharCounter(){
+  const len = chatInput.value.length;
+  charCounter.textContent = len + ' / ' + MAX_CHARS;
+  charCounter.classList.remove('warn','over');
+  if (len > MAX_CHARS) charCounter.classList.add('over');
+  else if (len > MAX_CHARS * 0.8) charCounter.classList.add('warn');
+}
+
+/* ---------- Preview ---------- */
+function showPreview(data, size){
+  pendingImage = { data: data, size: size };
+  previewImg.src = data;
+  previewInfo.textContent = 'image ready · ' + (size/1024).toFixed(1) + ' KB · costs ' + IMG_POINTS + ' points';
+  previewRow.classList.add('active');
+}
+function clearPreview(){
+  pendingImage = null;
+  previewImg.src = '';
+  previewInfo.textContent = '';
+  previewRow.classList.remove('active');
+}
+
+/* ---------- Events ---------- */
+chatSend.addEventListener('click', sendMessage);
+chatInput.addEventListener('keypress', function(e){
+  if (e.key === 'Enter'){ e.preventDefault(); sendMessage(); }
+});
+chatInput.addEventListener('input', updateCharCounter);
+previewRemove.addEventListener('click', clearPreview);
+
+chatFileInput.addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')){
+    alert('⚠ Only images are supported.');
+    chatFileInput.value = '';
+    return;
+  }
+  if (file.size > 800 * 1024){
+    alert('⚠ Image too large (max 800 KB) — Firestore has a 1 MB limit.');
+    chatFileInput.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(){
+    showPreview(reader.result, file.size);
+  };
+  reader.readAsDataURL(file);
+  chatFileInput.value = '';
+});
+
+updateCharCounter();
+</script>
+</body>
+</html>

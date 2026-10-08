@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABYSS · COMMAND CENTER</title>
+<style>
+  * { box-sizing: border-box; margin: 0; font-family: 'Courier New', monospace; }
+  body { background: #000; color: #ff6666; min-height: 100vh; overflow-x: hidden; }
+  #matrixCanvas { position: fixed; inset: 0; width: 100%; height: 100%;
+    z-index: 0; opacity: 0.2; pointer-events: none; }
+  body::before { content: ''; position: fixed; inset: 0;
+    background: radial-gradient(circle at center, rgba(255,0,0,0.08) 0%, rgba(0,0,0,0.95) 70%);
+    z-index: 1; pointer-events: none; }
+  #app { position: relative; z-index: 2; padding: 0.8rem; max-width: 1100px; margin: 0 auto; }
+
+  .top-bar { display: flex; align-items: center; justify-content: space-between;
+    padding: 0.7rem 1rem; margin-bottom: 0.8rem;
+    background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
+    border: 1px solid #ff0000; border-radius: 12px;
+    box-shadow: 0 0 20px rgba(255,0,0,0.3); flex-wrap: wrap; gap: 0.5rem; }
+  .top-bar h2 { font-size: 0.9rem; letter-spacing: 3px; color: #ff1a1a;
+    text-transform: uppercase; text-shadow: 0 0 10px #ff0000; }
+  .back-btn, .logout-btn { padding: 0.35rem 0.8rem; border: 1px solid #ff0000;
+    border-radius: 20px; background: transparent; color: #ff6666;
+    cursor: pointer; font-size: 0.7rem; letter-spacing: 2px;
+    text-transform: uppercase; font-family: inherit;
+    transition: all 0.2s; text-decoration: none; }
+  .back-btn:hover, .logout-btn:hover { background: #ff0000;
+    color: #000; box-shadow: 0 0 15px #ff0000; }
+
+  .card { background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
+    border: 1px solid #ff0000; border-radius: 12px;
+    padding: 1.2rem; box-shadow: 0 0 20px rgba(255,0,0,0.2); margin-bottom: 0.8rem; }
+  .card-title { font-size: 0.8rem; letter-spacing: 3px; color: #ff1a1a;
+    text-transform: uppercase; margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,0,0,0.3);
+    display: flex; align-items: center; gap: 0.5rem; }
+
+  .cmd-grid { display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.7rem; }
+  .cmd-btn { padding: 1rem; background: rgba(0,0,0,0.6);
+    border: 1px solid #ff0000; border-radius: 10px;
+    color: #ff6666; cursor: pointer; font-family: inherit;
+    font-size: 0.8rem; letter-spacing: 1px; text-align: left;
+    transition: all 0.2s; display: flex; align-items: center; gap: 0.6rem; }
+  .cmd-btn .ico { font-size: 1.2rem; }
+  .cmd-btn .txt { flex: 1; }
+  .cmd-btn .txt small { display: block; color: #661111;
+    font-size: 0.65rem; margin-top: 0.2rem; letter-spacing: 1px; }
+  .cmd-btn:hover { background: rgba(255,0,0,0.15); color: #fff;
+    box-shadow: 0 0 20px rgba(255,0,0,0.6); transform: translateY(-2px); }
+  .cmd-btn.danger { border-color: #ff1a1a; color: #ff1a1a; }
+  .cmd-btn.danger:hover { background: #ff0000; color: #000;
+    box-shadow: 0 0 30px #ff0000; }
+  .cmd-btn.success { border-color: #00ff44; color: #00ff88; }
+  .cmd-btn.success:hover { background: #00ff44; color: #000;
+    box-shadow: 0 0 30px #00ff44; }
+
+  .status-pill { display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.3rem 0.7rem; border: 1px solid #ff0000; border-radius: 20px;
+    background: rgba(0,0,0,0.5); color: #ff6666; font-size: 0.65rem;
+    letter-spacing: 2px; text-transform: uppercase; margin-left: auto; }
+  .status-pill.locked { border-color: #ff1a1a; color: #ff1a1a;
+    box-shadow: 0 0 15px rgba(255,0,0,0.6); animation: pulsePts 1.5s infinite; }
+  @keyframes pulsePts { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+  .user-list { display: flex; flex-direction: column; gap: 0.4rem; }
+  .user-row { display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.6rem 0.9rem; background: rgba(0,0,0,0.5);
+    border: 1px solid #ff0000; border-radius: 8px; font-size: 0.8rem; }
+  .user-row .u-name { color: #ff1a1a; font-weight: 700;
+    min-width: 100px; letter-spacing: 1px; }
+  .user-row .u-real { flex: 1; color: #ffcccc; font-size: 0.75rem; }
+  .user-row .u-kick { padding: 0.3rem 0.7rem; font-size: 0.65rem;
+    background: transparent; border: 1px solid #ff0000; color: #ff6666;
+    border-radius: 4px; cursor: pointer; font-family: inherit;
+    letter-spacing: 1px; }
+  .user-row .u-kick:hover { background: #ff0000; color: #000; }
+  .user-row.kicked { border-color: #00ff44; }
+  .user-row.kicked .u-kick { border-color: #00ff44; color: #00ff88; }
+  .user-row.kicked .u-kick:hover { background: #00ff44; color: #000; }
+
+  .modal-bg { display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.9); z-index: 200;
+    align-items: center; justify-content: center; padding: 1rem; }
+  .modal-bg.active { display: flex; }
+  .modal { background: rgba(10,0,0,0.95); border: 1px solid #ff0000;
+    border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 420px;
+    box-shadow: 0 0 40px rgba(255,0,0,0.6); }
+  .modal h3 { color: #ff1a1a; letter-spacing: 3px;
+    text-transform: uppercase; font-size: 0.9rem;
+    margin-bottom: 1rem; text-align: center; }
+  .modal label { display: block; font-size: 0.65rem; color: #ff6666;
+    margin-bottom: 0.4rem; letter-spacing: 2px;
+    text-transform: uppercase; margin-top: 0.8rem; }
+  .modal input, .modal textarea, .modal select { width: 100%;
+    padding: 0.8rem; background: rgba(0,0,0,0.7);
+    border: 1px solid #4d0000; border-radius: 8px;
+    color: #ffcccc; font-family: inherit; outline: none;
+    font-size: 0.85rem; }
+  .modal input:focus, .modal select:focus { border-color: #ff0000;
+    box-shadow: 0 0 10px rgba(255,0,0,0.5); }
+  .modal-btns { display: flex; gap: 0.5rem; margin-top: 1.2rem; }
+  .modal-btns button { flex: 1; padding: 0.8rem; border-radius: 8px;
+    cursor: pointer; font-family: inherit; letter-spacing: 1px;
+    font-size: 0.8rem; text-transform: uppercase; transition: all 0.2s; }
+  .modal-btns .ok { background: #8b0000; color: #fff;
+    border: 1px solid #ff0000; }
+  .modal-btns .ok:hover { background: #ff0000; }
+  .modal-btns .cancel { background: transparent; color: #ff6666;
+    border: 1px solid #4d0000; }
+  .modal-btns .cancel:hover { border-color: #ff0000; }
+
+  #toast { position: fixed; top: 1rem; left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    padding: 0.8rem 1.5rem; background: rgba(10,0,0,0.95);
+    border: 1px solid #ff0000; border-radius: 8px;
+    color: #ffcccc; font-size: 0.85rem; letter-spacing: 1px;
+    z-index: 500; transition: transform 0.3s;
+    box-shadow: 0 0 20px rgba(255,0,0,0.6); }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { border-color: #00ff44; color: #00ff88;
+    box-shadow: 0 0 20px rgba(0,255,68,0.6); }
+  #toast.error { border-color: #ff0000; color: #ff4444; }
+</style>
+</head>
+<body>
+<canvas id="matrixCanvas"></canvas>
+
+<div id="app" style="display:none;">
+  <div class="top-bar">
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <a class="back-btn" href="dashboard.html">← Back</a>
+      <h2>◈ Command Center</h2>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <span class="status-pill" id="lockStatus">● ACTIVE</span>
+      <button class="logout-btn" id="logoutBtn">⏻ Exit</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🔒 Master Commands</div>
+    <div class="cmd-grid">
+      <button class="cmd-btn danger" id="cmdWipeChat">
+        <span class="ico">🗑</span>
+        <span class="txt">Wipe Entire Chat<small>delete all chat messages</small></span>
+      </button>
+      <button class="cmd-btn danger" id="cmdLockAbyss">
+        <span class="ico">⛓</span>
+        <span class="txt">Lock The Abyss<small>kick everyone (except you)</small></span>
+      </button>
+      <button class="cmd-btn success" id="cmdUnlockAbyss">
+        <span class="ico">🔓</span>
+        <span class="txt">Unlock The Abyss<small>allow everyone back in</small></span>
+      </button>
+      <button class="cmd-btn danger" id="cmdKickUser">
+        <span class="ico">🚪</span>
+        <span class="txt">Kick User<small>expel a specific operator</small></span>
+      </button>
+      <button class="cmd-btn success" id="cmdUnkickUser">
+        <span class="ico">↩</span>
+        <span class="txt">Allow User Back<small>restore an expelled operator</small></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">👤 Operators Registry</div>
+    <div class="user-list" id="userList"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore, collection, getDocs, deleteDoc, doc,
+  setDoc, getDoc, addDoc, query, orderBy, limit
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDFbzXgjiYqrizFNhd9sePmk04NQd0vZDQ",
+  authDomain: "storage-for-devil-abyss.firebaseapp.com",
+  projectId: "storage-for-devil-abyss",
+  storageBucket: "storage-for-devil-abyss.firebasestorage.app",
+  messagingSenderId: "45419287364",
+  appId: "1:45419287364:web:a81c0b6e133326eece7d11"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const ADMIN_USER = "Devil-0";
+
+/* ---------- Matrix BG ---------- */
+const canvas = document.getElementById('matrixCanvas');
+const ctx = canvas.getContext('2d');
+function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+resize(); addEventListener('resize', resize);
+const chars = 'アカサタナハマヤラワ0123456789ABCDEF';
+const fs = 14;
+const drops = Array(Math.floor(canvas.width / fs)).fill(1);
+setInterval(function(){
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#ff0000';
+  ctx.font = fs + 'px monospace';
+  for (let i=0;i<drops.length;i++){
+    const t = chars[Math.floor(Math.random()*chars.length)];
+    ctx.fillText(t, i*fs, drops[i]*fs);
+    if (drops[i]*fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}, 50);
+
+/* ---------- Toast ---------- */
+const toast = document.getElementById('toast');
+let toastTimer;
+function showToast(msg, type){
+  toast.textContent = msg;
+  toast.className = 'show ' + (type || '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ toast.className = (type || ''); }, 2500);
+}
+
+/* ---------- Auth check ---------- */
+onAuthStateChanged(auth, async function(user){
+  if (!user){
+    window.location.replace('index.html');
+    return;
+  }
+
+  const stored = sessionStorage.getItem('abyss_user');
+  const username = stored || user.email.split('@')[0];
+
+  if (username !== ADMIN_USER){
+    alert('⛔ ACCESS DENIED — only Devil-0 can access the command center.');
+    window.location.replace('dashboard.html');
+    return;
+  }
+
+  document.getElementById('app').style.display = 'block';
+  await refreshAll();
+});
+
+/* ---------- Logout ---------- */
+document.getElementById('logoutBtn').addEventListener('click', async function(){
+  sessionStorage.removeItem('abyss_user');
+  await signOut(auth);
+  window.location.replace('index.html');
+});
+
+/* ---------- Load settings ---------- */
+async function loadSettings(){
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'global'));
+    if (snap.exists()) return snap.data();
+    return { locked: false, kicked: [] };
+  } catch (e){
+    console.error(e);
+    return { locked: false, kicked: [] };
+  }
+}
+
+async function saveSettings(data){
+  try {
+    await setDoc(doc(db, 'settings', 'global'), data);
+  } catch (e){
+    console.error(e);
+  }
+}
+
+/* ---------- Refresh UI ---------- */
+async function refreshAll(){
+  const settings = await loadSettings();
+
+  // lock status
+  const lockStatus = document.getElementById('lockStatus');
+  if (settings.locked){
+    lockStatus.textContent = '⛓ LOCKED';
+    lockStatus.classList.add('locked');
+  } else {
+    lockStatus.textContent = '● ACTIVE';
+    lockStatus.classList.remove('locked');
+  }
+
+  // users list
+  try {
+    const usersSnap = await getDocs(collection(db, 'accounts'));
+    const userList = document.getElementById('userList');
+    userList.innerHTML = '';
+
+    const kicked = settings.kicked || [];
+
+    usersSnap.forEach(function(d){
+      const data = d.data();
+      const k = data.username || d.id;
+      const isKicked = kicked.indexOf(k) !== -1;
+
+      const row = document.createElement('div');
+      row.className = 'user-row';
+      if (isKicked) row.classList.add('kicked');
+      if (k === ADMIN_USER){
+        row.style.borderColor = '#ff0000';
+        row.style.boxShadow = '0 0 15px rgba(255,0,0,0.5)';
+      }
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'u-name';
+      nameEl.textContent = k + (k === ADMIN_USER ? ' ★' : '');
+
+      const realEl = document.createElement('div');
+      realEl.className = 'u-real';
+      realEl.textContent = data.realName || '—';
+
+      const kickBtn = document.createElement('button');
+      kickBtn.className = 'u-kick';
+
+      if (k === ADMIN_USER){
+        kickBtn.textContent = 'OWNER';
+        kickBtn.disabled = true;
+        kickBtn.style.opacity = 0.5;
+        kickBtn.style.cursor = 'not-allowed';
+      } else {
+        kickBtn.textContent = isKicked ? '↩ ALLOW' : '🚪 KICK';
+        kickBtn.addEventListener('click', (function(userK){
+          return async function(){
+            const s = await loadSettings();
+            const arr = s.kicked || [];
+            if (arr.indexOf(userK) !== -1){
+              s.kicked = arr.filter(function(x){ return x !== userK; });
+              await saveSettings(s);
+              showToast(userK + ' allowed back', 'success');
+            } else {
+              s.kicked = arr.concat([userK]);
+              await saveSettings(s);
+              showToast(userK + ' kicked', 'error');
+            }
+            await refreshAll();
+          };
+        })(k));
+      }
+
+      row.appendChild(nameEl);
+      row.appendChild(realEl);
+      row.appendChild(kickBtn);
+      userList.appendChild(row);
+    });
+
+    if (!usersSnap.size){
+      userList.innerHTML = '<div style="text-align:center;color:#661111;padding:1rem;">no operators yet</div>';
+    }
+  } catch (e){
+    console.error(e);
+    showToast('failed to load users', 'error');
+  }
+}
+
+/* ---------- Modal ---------- */
+const modalBg = document.getElementById('modalBg');
+const modalContent = document.getElementById('modalContent');
+function openModal(html){
+  modalContent.innerHTML = html;
+  modalBg.classList.add('active');
+}
+function closeModal(){
+  modalBg.classList.remove('active');
+  modalContent.innerHTML = '';
+}
+modalBg.addEventListener('click', function(e){
+  if (e.target === modalBg) closeModal();
+});
+
+/* ---------- COMMAND 1: Wipe chat ---------- */
+document.getElementById('cmdWipeChat').addEventListener('click', function(){
+  openModal(
+    '<h3>⚠ Wipe Entire Chat</h3>' +
+    '<p style="color:#ff6666;font-size:0.8rem;text-align:center;line-height:1.5;">' +
+    'This will delete ALL chat messages permanently.</p>' +
+    '<div class="modal-btns">' +
+    '<button class="cancel" id="mxCancel">Cancel</button>' +
+    '<button class="ok" id="confirmWipe">🗑 Wipe</button>' +
+    '</div>'
+  );
+  document.getElementById('mxCancel').addEventListener('click', closeModal);
+  document.getElementById('confirmWipe').addEventListener('click', async function(){
+    try {
+      const snap = await getDocs(collection(db, 'messages'));
+      const promises = [];
+      snap.forEach(function(d){
+        promises.push(deleteDoc(doc(db, 'messages', d.id)));
+      });
+      await Promise.all(promises);
+      closeModal();
+      showToast('chat wiped', 'success');
+    } catch (e){
+      console.error(e);
+      showToast('failed: ' + e.message, 'error');
+    }
+  });
+});
+
+/* ---------- COMMAND 2: Lock Abyss ---------- */
+document.getElementById('cmdLockAbyss').addEventListener('click', function(){
+  openModal(
+    '<h3>⛓ Lock The Abyss</h3>' +
+    '<p style="color:#ff6666;font-size:0.8rem;text-align:center;line-height:1.5;">' +
+    'Everyone except <b>Devil-0</b> will be kicked out.<br>' +
+    'They will see: <em>"تم إقفال الهاوية"</em></p>' +
+    '<div class="modal-btns">' +
+    '<button class="cancel" id="mxCancel">Cancel</button>' +
+    '<button class="ok" id="confirmLock">⛓ Lock</button>' +
+    '</div>'
+  );
+  document.getElementById('mxCancel').addEventListener('click', closeModal);
+  document.getElementById('confirmLock').addEventListener('click', async function(){
+    const s = await loadSettings();
+    s.locked = true;
+    await saveSettings(s);
+    closeModal();
+    await refreshAll();
+    showToast('the abyss is now LOCKED', 'error');
+  });
+});
+
+/* ---------- COMMAND 3: Unlock Abyss ---------- */
+document.getElementById('cmdUnlockAbyss').addEventListener('click', async function(){
+  const s = await loadSettings();
+  s.locked = false;
+  await saveSettings(s);
+  await refreshAll();
+  showToast('the abyss is now OPEN', 'success');
+});
+
+/* ---------- COMMAND 4: Kick user ---------- */
+document.getElementById('cmdKickUser').addEventListener('click', async function(){
+  const usersSnap = await getDocs(collection(db, 'accounts'));
+  const settings = await loadSettings();
+  const kicked = settings.kicked || [];
+
+  const avail = [];
+  usersSnap.forEach(function(d){
+    const k = d.data().username || d.id;
+    if (k !== ADMIN_USER && kicked.indexOf(k) === -1) avail.push(k);
+  });
+
+  if (!avail.length){
+    showToast('no users to kick', 'error');
+    return;
+  }
+
+  const options = avail.map(function(u){
+    return '<option value="' + u + '">' + u + '</option>';
+  }).join('');
+
+  openModal(
+    '<h3>🚪 Kick User</h3>' +
+    '<label>Select Operator</label>' +
+    '<select id="kickUser">' + options + '</select>' +
+    '<p style="color:#661111;font-size:0.7rem;text-align:center;margin-top:0.8rem;">' +
+    'When kicked, the user will see:<br>"تم طردك شخصياً من الموقع بواسطة المنشئ"</p>' +
+    '<div class="modal-btns">' +
+    '<button class="cancel" id="mxCancel">Cancel</button>' +
+    '<button class="ok" id="confirmKick">🚪 Kick</button>' +
+    '</div>'
+  );
+  document.getElementById('mxCancel').addEventListener('click', closeModal);
+  document.getElementById('confirmKick').addEventListener('click', async function(){
+    const u = document.getElementById('kickUser').value;
+    const s = await loadSettings();
+    const arr = s.kicked || [];
+    if (arr.indexOf(u) === -1) s.kicked = arr.concat([u]);
+    await saveSettings(s);
+    closeModal();
+    await refreshAll();
+    showToast(u + ' kicked from the abyss', 'error');
+  });
+});
+
+/* ---------- COMMAND 5: Unkick user ---------- */
+document.getElementById('cmdUnkickUser').addEventListener('click', async function(){
+  const s = await loadSettings();
+  const kicked = s.kicked || [];
+  if (!kicked.length){
+    showToast('no kicked users', 'error');
+    return;
+  }
+
+  const options = kicked.map(function(u){
+    return '<option value="' + u + '">' + u + '</option>';
+  }).join('');
+
+  openModal(
+    '<h3>↩ Allow User Back</h3>' +
+    '<label>Select Kicked Operator</label>' +
+    '<select id="unkickUser">' + options + '</select>' +
+    '<div class="modal-btns">' +
+    '<button class="cancel" id="mxCancel">Cancel</button>' +
+    '<button class="ok" id="confirmUnkick">↩ Allow</button>' +
+    '</div>'
+  );
+  document.getElementById('mxCancel').addEventListener('click', closeModal);
+  document.getElementById('confirmUnkick').addEventListener('click', async function(){
+    const u = document.getElementById('unkickUser').value;
+    const s = await loadSettings();
+    s.kicked = (s.kicked || []).filter(function(x){ return x !== u; });
+    await saveSettings(s);
+    closeModal();
+    await refreshAll();
+    showToast(u + ' allowed back', 'success');
+  });
+});
+</script>
+</body>
+</html>

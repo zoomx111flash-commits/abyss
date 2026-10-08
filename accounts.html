@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ABYSS · ACCOUNTS</title>
+<style>
+  * { box-sizing: border-box; margin: 0; font-family: 'Courier New', monospace; }
+  body { background: #000; color: #ff6666; min-height: 100vh; overflow-x: hidden; }
+  #matrixCanvas { position: fixed; inset: 0; width: 100%; height: 100%;
+    z-index: 0; opacity: 0.2; pointer-events: none; }
+  body::before { content: ''; position: fixed; inset: 0;
+    background: radial-gradient(circle at center, rgba(255,0,0,0.08) 0%, rgba(0,0,0,0.95) 70%);
+    z-index: 1; pointer-events: none; }
+  #app { position: relative; z-index: 2; padding: 0.8rem; max-width: 900px; margin: 0 auto; }
+
+  .top-bar { display: flex; align-items: center; justify-content: space-between;
+    padding: 0.7rem 1rem; margin-bottom: 0.8rem;
+    background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
+    border: 1px solid #ff0000; border-radius: 12px;
+    box-shadow: 0 0 20px rgba(255,0,0,0.3); flex-wrap: wrap; gap: 0.5rem; }
+  .top-bar h2 { font-size: 0.9rem; letter-spacing: 3px; color: #ff1a1a;
+    text-transform: uppercase; text-shadow: 0 0 10px #ff0000; }
+  .back-btn, .logout-btn { padding: 0.35rem 0.8rem; border: 1px solid #ff0000;
+    border-radius: 20px; background: transparent; color: #ff6666;
+    cursor: pointer; font-size: 0.7rem; letter-spacing: 2px;
+    text-transform: uppercase; font-family: inherit;
+    transition: all 0.2s; text-decoration: none; }
+  .back-btn:hover, .logout-btn:hover { background: #ff0000;
+    color: #000; box-shadow: 0 0 15px #ff0000; }
+
+  .card { background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
+    border: 1px solid #ff0000; border-radius: 12px;
+    padding: 1.2rem; box-shadow: 0 0 20px rgba(255,0,0,0.2); }
+  .card-title { font-size: 0.8rem; letter-spacing: 3px; color: #ff1a1a;
+    text-transform: uppercase; margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,0,0,0.3);
+    display: flex; justify-content: space-between;
+    align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+
+  .user-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .user-row { display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.8rem 1rem; background: rgba(0,0,0,0.5);
+    border: 1px solid #ff0000; border-radius: 8px; font-size: 0.85rem; }
+  .user-row .u-name { color: #ff1a1a; font-weight: 700;
+    min-width: 100px; letter-spacing: 1px; text-shadow: 0 0 6px rgba(255,0,0,0.5); }
+  .user-row .u-real { flex: 1; color: #ffcccc; font-size: 0.85rem; }
+  .user-row .u-real.empty { color: #661111; font-style: italic; }
+
+  .user-row .u-edit { padding: 0.3rem 0.7rem; font-size: 0.65rem;
+    background: transparent; border: 1px solid #ff0000; color: #ff6666;
+    border-radius: 4px; cursor: pointer; font-family: inherit;
+    letter-spacing: 1px; transition: all 0.2s; }
+  .user-row .u-edit:hover { background: #ff0000; color: #000; }
+  .user-row .u-edit:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .empty-msg { text-align: center; color: #661111;
+    padding: 2rem; font-size: 0.8rem; letter-spacing: 1px; }
+
+  .info-badge { padding: 0.3rem 0.7rem; border: 1px solid #4d0000;
+    border-radius: 20px; background: rgba(0,0,0,0.5);
+    color: #661111; font-size: 0.6rem; letter-spacing: 2px;
+    text-transform: uppercase; }
+
+  .modal-bg { display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.9); z-index: 200;
+    align-items: center; justify-content: center; padding: 1rem; }
+  .modal-bg.active { display: flex; }
+  .modal { background: rgba(10,0,0,0.95); border: 1px solid #ff0000;
+    border-radius: 12px; padding: 1.5rem; width: 100%; max-width: 420px;
+    box-shadow: 0 0 40px rgba(255,0,0,0.6); }
+  .modal h3 { color: #ff1a1a; letter-spacing: 3px;
+    text-transform: uppercase; font-size: 0.9rem;
+    margin-bottom: 1rem; text-align: center; }
+  .modal label { display: block; font-size: 0.65rem; color: #ff6666;
+    margin-bottom: 0.4rem; letter-spacing: 2px;
+    text-transform: uppercase; margin-top: 0.8rem; }
+  .modal input { width: 100%; padding: 0.8rem;
+    background: rgba(0,0,0,0.7); border: 1px solid #4d0000;
+    border-radius: 8px; color: #ffcccc; font-family: inherit;
+    outline: none; font-size: 0.9rem; }
+  .modal input:focus { border-color: #ff0000;
+    box-shadow: 0 0 10px rgba(255,0,0,0.5); }
+  .modal-btns { display: flex; gap: 0.5rem; margin-top: 1.2rem; }
+  .modal-btns button { flex: 1; padding: 0.8rem; border-radius: 8px;
+    cursor: pointer; font-family: inherit; letter-spacing: 1px;
+    font-size: 0.8rem; text-transform: uppercase; transition: all 0.2s; }
+  .modal-btns .ok { background: #8b0000; color: #fff;
+    border: 1px solid #ff0000; }
+  .modal-btns .ok:hover { background: #ff0000; }
+  .modal-btns .cancel { background: transparent; color: #ff6666;
+    border: 1px solid #4d0000; }
+  .modal-btns .cancel:hover { border-color: #ff0000; }
+
+  #toast { position: fixed; top: 1rem; left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    padding: 0.8rem 1.5rem; background: rgba(10,0,0,0.95);
+    border: 1px solid #ff0000; border-radius: 8px;
+    color: #ffcccc; font-size: 0.85rem; letter-spacing: 1px;
+    z-index: 500; transition: transform 0.3s;
+    box-shadow: 0 0 20px rgba(255,0,0,0.6); }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { border-color: #00ff44; color: #00ff88;
+    box-shadow: 0 0 20px rgba(0,255,68,0.6); }
+  #toast.error { border-color: #ff0000; color: #ff4444; }
+</style>
+</head>
+<body>
+<canvas id="matrixCanvas"></canvas>
+
+<div id="app" style="display:none;">
+  <div class="top-bar">
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <a class="back-btn" href="dashboard.html">← Back</a>
+      <h2>◈ Account Registry</h2>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <span id="userBadge" style="padding:0.35rem 0.8rem;border:1px solid #ff0000;border-radius:20px;
+        background:rgba(255,0,0,0.1);color:#ff6666;font-size:0.7rem;letter-spacing:2px;"></span>
+      <button class="logout-btn" id="logoutBtn">⏻ Exit</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      👤 Operators Registry
+      <span class="info-badge" id="accCount">0 operators</span>
+    </div>
+    <div class="user-list" id="userList">
+      <div class="empty-msg">◈ loading operators... ◈</div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div id="toast"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import {
+  getFirestore, collection, getDocs, doc,
+  setDoc, updateDoc, getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDFbzXgjiYqrizFNhd9sePmk04NQd0vZDQ",
+  authDomain: "storage-for-devil-abyss.firebaseapp.com",
+  projectId: "storage-for-devil-abyss",
+  storageBucket: "storage-for-devil-abyss.firebasestorage.app",
+  messagingSenderId: "45419287364",
+  appId: "1:45419287364:web:a81c0b6e133326eece7d11"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const ADMIN_USER = "Devil-0";
+
+/* ---------- Matrix BG ---------- */
+const canvas = document.getElementById('matrixCanvas');
+const ctx = canvas.getContext('2d');
+function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+resize(); addEventListener('resize', resize);
+const chars = 'アカサタナハマヤラワ0123456789ABCDEF';
+const fs = 14;
+const drops = Array(Math.floor(canvas.width / fs)).fill(1);
+setInterval(function(){
+  ctx.fillStyle = 'rgba(0,0,0,0.06)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = '#ff0000';
+  ctx.font = fs + 'px monospace';
+  for (let i=0;i<drops.length;i++){
+    const t = chars[Math.floor(Math.random()*chars.length)];
+    ctx.fillText(t, i*fs, drops[i]*fs);
+    if (drops[i]*fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
+    drops[i]++;
+  }
+}, 50);
+
+/* ---------- Toast ---------- */
+const toast = document.getElementById('toast');
+let toastTimer;
+function showToast(msg, type){
+  toast.textContent = msg;
+  toast.className = 'show ' + (type || '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ toast.className = (type || ''); }, 2500);
+}
+
+/* ---------- Auth check ---------- */
+let currentUser = null;
+let isAdmin = false;
+
+onAuthStateChanged(auth, async function(user){
+  if (!user){
+    window.location.replace('index.html');
+    return;
+  }
+  const stored = sessionStorage.getItem('abyss_user');
+  currentUser = stored || user.email.split('@')[0];
+  isAdmin = (currentUser === ADMIN_USER);
+
+  document.getElementById('userBadge').textContent = currentUser + (isAdmin ? ' ★' : '');
+  document.getElementById('app').style.display = 'block';
+
+  await refreshAll();
+});
+
+/* ---------- Logout ---------- */
+document.getElementById('logoutBtn').addEventListener('click', async function(){
+  sessionStorage.removeItem('abyss_user');
+  await signOut(auth);
+  window.location.replace('index.html');
+});
+
+/* ---------- Load all accounts ---------- */
+async function refreshAll(){
+  try {
+    const snap = await getDocs(collection(db, 'accounts'));
+    const userList = document.getElementById('userList');
+    userList.innerHTML = '';
+
+    const accounts = [];
+    snap.forEach(function(d){
+      const data = d.data();
+      accounts.push({
+        id: d.id,
+        username: data.username || d.id,
+        realName: data.realName || ''
+      });
+    });
+
+    // Sort: Devil-0 first, then by number
+    accounts.sort(function(a, b){
+      if (a.username === ADMIN_USER) return -1;
+      if (b.username === ADMIN_USER) return 1;
+      return a.username.localeCompare(b.username);
+    });
+
+    document.getElementById('accCount').textContent =
+      accounts.length + ' operator' + (accounts.length === 1 ? '' : 's');
+
+    if (!accounts.length){
+      userList.innerHTML = '<div class="empty-msg">◈ no operators found ◈</div>';
+      return;
+    }
+
+    accounts.forEach(function(acc){
+      const row = document.createElement('div');
+      row.className = 'user-row';
+      if (acc.username === ADMIN_USER){
+        row.style.borderColor = '#ff0000';
+        row.style.boxShadow = '0 0 15px rgba(255,0,0,0.5)';
+      }
+
+      const nameEl = document.createElement('div');
+      nameEl.className = 'u-name';
+      nameEl.textContent = acc.username + (acc.username === ADMIN_USER ? ' ★' : '');
+
+      const realEl = document.createElement('div');
+      realEl.className = 'u-real' + (acc.realName ? '' : ' empty');
+      realEl.textContent = acc.realName || '(no name set)';
+
+      const editBtn = document.createElement('button');
+      editBtn.className = 'u-edit';
+      editBtn.textContent = isAdmin ? (acc.realName ? '✎ EDIT' : '✎ SET') : '🔒 VIEW';
+      editBtn.disabled = !isAdmin;
+      if (isAdmin){
+        editBtn.addEventListener('click', function(){
+          openEditModal(acc);
+        });
+      }
+
+      row.appendChild(nameEl);
+      row.appendChild(realEl);
+      row.appendChild(editBtn);
+      userList.appendChild(row);
+    });
+  } catch (e){
+    console.error(e);
+    document.getElementById('userList').innerHTML =
+      '<div class="empty-msg">⚠ failed to load operators</div>';
+  }
+}
+
+/* ---------- Modal ---------- */
+const modalBg = document.getElementById('modalBg');
+const modalContent = document.getElementById('modalContent');
+
+function openModal(html){
+  modalContent.innerHTML = html;
+  modalBg.classList.add('active');
+}
+function closeModal(){
+  modalBg.classList.remove('active');
+  modalContent.innerHTML = '';
+}
+modalBg.addEventListener('click', function(e){
+  if (e.target === modalBg) closeModal();
+});
+
+function openEditModal(acc){
+  openModal(
+    '<h3>✎ Set Real Name</h3>' +
+    '<label>Operator</label>' +
+    '<input type="text" value="' + acc.username + '" disabled ' +
+      'style="opacity:0.6;cursor:not-allowed;">' +
+    '<label>Real Name</label>' +
+    '<input type="text" id="realNameInput" placeholder="e.g. محمد" ' +
+      'value="' + escapeHtml(acc.realName) + '" autocomplete="off" maxlength="30">' +
+    '<div class="modal-btns">' +
+    '<button class="cancel" id="mxCancel">Cancel</button>' +
+    '<button class="ok" id="mxSave">Save</button>' +
+    '</div>'
+  );
+
+  document.getElementById('mxCancel').addEventListener('click', closeModal);
+  document.getElementById('mxSave').addEventListener('click', async function(){
+    const newName = document.getElementById('realNameInput').value.trim();
+    await saveRealName(acc.id, newName);
+    closeModal();
+    await refreshAll();
+    showToast('✓ name updated for ' + acc.username, 'success');
+  });
+
+  // Focus input
+  setTimeout(function(){
+    const inp = document.getElementById('realNameInput');
+    if (inp) inp.focus();
+  }, 100);
+}
+
+async function saveRealName(accountId, name){
+  try {
+    const ref = doc(db, 'accounts', accountId);
+    const snap = await getDoc(ref);
+    if (snap.exists()){
+      await updateDoc(ref, { realName: name });
+    } else {
+      await setDoc(ref, {
+        username: accountId,
+        realName: name,
+        createdAt: Date.now()
+      });
+    }
+  } catch (e){
+    console.error(e);
+    showToast('failed: ' + e.message, 'error');
+  }
+}
+
+function escapeHtml(s){
+  return String(s || '').replace(/[&<>"']/g, function(c){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+  });
+}
+</script>
+</body>
+</html>
