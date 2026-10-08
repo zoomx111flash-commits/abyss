@@ -4,153 +4,537 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ABYSS · CHAT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; font-family: 'Courier New', monospace; }
-  body { background: #000; color: #ff6666; min-height: 100vh; overflow-x: hidden; }
-  #matrixCanvas { position: fixed; inset: 0; width: 100%; height: 100%;
-    z-index: 0; opacity: 0.2; pointer-events: none; }
-  body::before { content: ''; position: fixed; inset: 0;
-    background: radial-gradient(circle at center, rgba(255,0,0,0.08) 0%, rgba(0,0,0,0.95) 70%);
-    z-index: 1; pointer-events: none; }
-  #app { position: relative; z-index: 2; padding: 0.8rem; max-width: 1000px; margin: 0 auto; }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+  html, body { height: 100%; }
 
-  .top-bar { display: flex; align-items: center; justify-content: space-between;
-    padding: 0.7rem 1rem; margin-bottom: 0.8rem;
-    background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
-    border: 1px solid #ff0000; border-radius: 12px;
-    box-shadow: 0 0 20px rgba(255,0,0,0.3); flex-wrap: wrap; gap: 0.5rem; }
-  .top-bar h2 { font-size: 0.9rem; letter-spacing: 3px; color: #ff1a1a;
-    text-transform: uppercase; text-shadow: 0 0 10px #ff0000; }
-  .back-btn, .logout-btn { padding: 0.35rem 0.8rem; border: 1px solid #ff0000;
-    border-radius: 20px; background: transparent; color: #ff6666;
-    cursor: pointer; font-size: 0.7rem; letter-spacing: 2px;
-    text-transform: uppercase; font-family: inherit;
-    transition: all 0.2s; text-decoration: none; }
-  .back-btn:hover, .logout-btn:hover { background: #ff0000;
-    color: #000; box-shadow: 0 0 15px #ff0000; }
+  :root {
+    --bg: #030308;
+    --card: rgba(10, 10, 18, 0.65);
+    --card-solid: rgba(12, 12, 22, 0.92);
+    --border: rgba(255, 30, 60, 0.25);
+    --border-hover: rgba(255, 30, 60, 0.65);
+    --red: #ff1e3c;
+    --red-2: #ff5570;
+    --red-glow: rgba(255, 30, 60, 0.6);
+    --text: #ebebf5;
+    --text-dim: #70707f;
+    --text-mute: #3a3a48;
+    --success: #00ff88;
+  }
 
-  .card { background: rgba(10,0,0,0.85); backdrop-filter: blur(10px);
-    border: 1px solid #ff0000; border-radius: 12px;
-    padding: 1.2rem; box-shadow: 0 0 20px rgba(255,0,0,0.2); }
-  .card-title { font-size: 0.8rem; letter-spacing: 3px; color: #ff1a1a;
-    text-transform: uppercase; margin-bottom: 0.8rem;
-    padding-bottom: 0.5rem; border-bottom: 1px solid rgba(255,0,0,0.3);
-    display: flex; justify-content: space-between; align-items: center;
-    flex-wrap: wrap; gap: 0.5rem; }
-  .card-title .points { font-size: 0.65rem; color: #991111;
-    letter-spacing: 1px; text-transform: none; }
-  .card-title .points.warn { color: #ff6666; }
-  .card-title .points.full { color: #ff0000; font-weight: 700;
-    animation: pulsePts 1s infinite; }
-  @keyframes pulsePts { 0%,100%{opacity:1} 50%{opacity:0.5} }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    padding: 1.5rem;
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(255, 30, 60, 0.12) 0%, transparent 45%),
+      radial-gradient(circle at 85% 80%, rgba(150, 0, 255, 0.08) 0%, transparent 45%);
+  }
 
-  .chat-box { height: 55vh; min-height: 280px; overflow-y: auto;
-    background: rgba(0,0,0,0.5); border: 1px solid #4d0000;
-    border-radius: 8px; padding: 0.8rem; margin-bottom: 0.6rem;
-    scrollbar-width: thin; scrollbar-color: #ff0000 #1a0000; }
-  .chat-box::-webkit-scrollbar { width: 6px; }
-  .chat-box::-webkit-scrollbar-track { background: #1a0000; }
-  .chat-box::-webkit-scrollbar-thumb { background: #ff0000; border-radius: 3px; }
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(255, 30, 60, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 30, 60, 0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    opacity: 0.8;
+  }
 
-  .chat-msg { padding: 0.6rem 0.8rem; margin-bottom: 0.5rem;
-    border-left: 2px solid #ff0000; border-radius: 4px;
-    background: rgba(255,0,0,0.05); font-size: 0.8rem; word-break: break-word; }
-  .chat-msg .header { display: flex; justify-content: space-between;
-    align-items: baseline; margin-bottom: 0.3rem;
-    gap: 0.5rem; flex-wrap: wrap; }
-  .chat-msg .author { color: #ff1a1a; font-weight: 700;
-    letter-spacing: 1px; text-shadow: 0 0 6px rgba(255,0,0,0.5); }
-  .chat-msg .time { color: #661111; font-size: 0.65rem; }
-  .chat-msg .content { color: #ffcccc; margin-top: 0.2rem; white-space: pre-wrap; }
-  .chat-msg img { max-width: 200px; max-height: 200px;
-    border: 1px solid #ff0000; border-radius: 4px;
-    margin-top: 0.4rem; display: block; cursor: pointer; }
+  #matrixCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.3;
+  }
 
-  .empty-msg { text-align: center; color: #661111;
-    padding: 2rem; font-size: 0.8rem; }
+  #app {
+    position: relative;
+    z-index: 10;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
 
-  .chat-input-row { display: flex; gap: 0.4rem; align-items: flex-start; flex-wrap: wrap; }
-  .chat-input-row input[type="text"] { flex: 1; padding: 0.7rem 0.9rem;
-    background: rgba(0,0,0,0.7); border: 1px solid #4d0000;
-    border-radius: 8px; color: #ffcccc; font-family: inherit;
-    outline: none; font-size: 0.85rem; min-width: 150px; }
-  .chat-input-row input[type="text"]:focus { border-color: #ff0000;
-    box-shadow: 0 0 10px rgba(255,0,0,0.5); }
-  .chat-input-row button { padding: 0.7rem 1rem; background: #8b0000;
-    color: #fff; border: 1px solid #ff0000; border-radius: 8px;
-    cursor: pointer; letter-spacing: 1px; font-family: inherit;
-    transition: all 0.2s; font-size: 0.8rem; }
-  .chat-input-row button:hover { background: #ff0000;
-    box-shadow: 0 0 15px #ff0000; }
-  .chat-input-row button:disabled { opacity: 0.4; cursor: wait; }
-  .file-btn { padding: 0.7rem; background: rgba(0,0,0,0.7);
-    color: #ff6666; border: 1px solid #4d0000; border-radius: 8px;
-    cursor: pointer; font-family: inherit; transition: all 0.2s;
-    font-size: 0.9rem; display: inline-flex; align-items: center;
-    justify-content: center; }
-  .file-btn:hover { border-color: #ff0000; color: #ff1a1a;
-    box-shadow: 0 0 10px rgba(255,0,0,0.5); }
+  /* ============ TOP BAR ============ */
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    background: var(--card);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px -20px rgba(255, 30, 60, 0.3);
+    flex-wrap: wrap;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
+  }
 
-  .char-counter { font-size: 0.65rem; color: #661111;
-    letter-spacing: 1px; padding: 0.5rem 0.6rem;
-    border: 1px solid #4d0000; border-radius: 6px;
-    background: rgba(0,0,0,0.5); align-self: center;
-    min-width: 70px; text-align: center; }
-  .char-counter.warn { color: #ff6666; border-color: #ff0000; }
-  .char-counter.over { color: #ff0000; font-weight: 700;
-    animation: pulsePts 0.8s infinite; }
+  .top-bar::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    animation: topLine 5s linear infinite;
+  }
+  @keyframes topLine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
 
-  .preview-row { display: none; align-items: center; gap: 0.5rem;
-    padding: 0.5rem; margin-bottom: 0.5rem;
-    background: rgba(255,0,0,0.05); border: 1px solid #4d0000;
-    border-radius: 8px; }
+  .top-bar-left, .top-bar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .top-bar h2 {
+    font-size: 0.95rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text);
+    text-shadow: 0 0 15px var(--red-glow);
+  }
+
+  .back-btn, .logout-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .back-btn:hover, .logout-btn:hover {
+    background: var(--red);
+    color: #000;
+    border-color: var(--red);
+  }
+
+  .user-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: rgba(255, 30, 60, 0.08);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+
+  .user-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 8px var(--red);
+  }
+
+  /* ============ CARD ============ */
+  .card {
+    background: var(--card);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 20px 60px -20px rgba(255, 30, 60, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--red);
+    font-weight: 700;
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 30, 60, 0.15);
+    flex-wrap: wrap;
+  }
+
+  .points-info {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    font-weight: 400;
+    text-transform: none;
+  }
+
+  .points-info.warn { color: #ffaa00; }
+  .points-info.full { color: var(--red); font-weight: 700; animation: pulse 1.5s infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+
+  /* ============ CHAT BOX ============ */
+  .chat-box {
+    height: 60vh;
+    min-height: 300px;
+    overflow-y: auto;
+    background: rgba(5, 5, 12, 0.5);
+    border: 1px solid rgba(255, 30, 60, 0.15);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 30, 60, 0.4) transparent;
+  }
+
+  .chat-box::-webkit-scrollbar { width: 8px; }
+  .chat-box::-webkit-scrollbar-track { background: transparent; }
+  .chat-box::-webkit-scrollbar-thumb {
+    background: rgba(255, 30, 60, 0.3);
+    border-radius: 4px;
+  }
+  .chat-box::-webkit-scrollbar-thumb:hover { background: rgba(255, 30, 60, 0.5); }
+
+  .chat-msg {
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.65rem;
+    background: rgba(255, 30, 60, 0.04);
+    border-left: 2px solid var(--red);
+    border-radius: 8px;
+    font-size: 0.88rem;
+    word-break: break-word;
+    transition: background 0.2s;
+  }
+
+  .chat-msg:hover {
+    background: rgba(255, 30, 60, 0.08);
+  }
+
+  .chat-msg .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.35rem;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .chat-msg .author {
+    color: var(--red);
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px rgba(255, 30, 60, 0.4);
+    font-size: 0.85rem;
+  }
+
+  .chat-msg .author .realname {
+    color: var(--text-dim);
+    font-weight: 400;
+    font-size: 0.75rem;
+    margin-left: 0.4rem;
+  }
+
+  .chat-msg .time {
+    color: var(--text-mute);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+  }
+
+  .chat-msg .content {
+    color: var(--text);
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .chat-msg img {
+    max-width: 220px;
+    max-height: 220px;
+    border: 1px solid var(--red);
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    display: block;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+
+  .chat-msg img:hover {
+    transform: scale(1.02);
+  }
+
+  .empty-msg {
+    text-align: center;
+    color: var(--text-mute);
+    padding: 3rem 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ============ INPUT ROW ============ */
+  .chat-input-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .file-btn {
+    padding: 0.85rem 1rem;
+    background: rgba(5, 5, 12, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .file-btn:hover {
+    border-color: var(--border-hover);
+    color: var(--red);
+    background: rgba(255, 30, 60, 0.06);
+  }
+
+  .chat-input-row input[type="text"] {
+    flex: 1;
+    min-width: 150px;
+    padding: 0.85rem 1rem;
+    background: rgba(5, 5, 12, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .chat-input-row input[type="text"]:focus {
+    border-color: var(--border-hover);
+    box-shadow: 0 0 0 3px rgba(255, 30, 60, 0.08);
+  }
+
+  .chat-input-row input[type="text"]::placeholder {
+    color: var(--text-mute);
+    font-weight: 300;
+  }
+
+  .chat-input-row button {
+    padding: 0.85rem 1.5rem;
+    background: linear-gradient(135deg, #ff1e3c 0%, #cc0022 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    box-shadow: 0 4px 20px rgba(255, 30, 60, 0.4);
+    white-space: nowrap;
+  }
+
+  .chat-input-row button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 25px rgba(255, 30, 60, 0.55);
+  }
+
+  .chat-input-row button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .char-counter {
+    padding: 0.85rem 0.85rem;
+    background: rgba(5, 5, 12, 0.6);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    align-self: center;
+    min-width: 80px;
+    text-align: center;
+    transition: all 0.2s;
+  }
+
+  .char-counter.warn { color: #ffaa00; border-color: rgba(255, 170, 0, 0.4); }
+  .char-counter.over { color: var(--red); border-color: var(--red); font-weight: 700; }
+
+  /* ============ IMAGE PREVIEW ============ */
+  .preview-row {
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    background: rgba(255, 30, 60, 0.06);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
   .preview-row.active { display: flex; }
-  .preview-row img { max-height: 60px; max-width: 60px;
-    border: 1px solid #ff0000; border-radius: 4px; }
-  .preview-row .info { flex: 1; font-size: 0.7rem; color: #ff6666; }
-  .preview-row .remove { padding: 0.3rem 0.6rem; background: transparent;
-    border: 1px solid #ff0000; color: #ff6666; border-radius: 4px;
-    cursor: pointer; font-family: inherit; font-size: 0.7rem; }
-  .preview-row .remove:hover { background: #ff0000; color: #000; }
 
-  #lightbox { display: none; position: fixed; inset: 0; z-index: 500;
-    background: rgba(0,0,0,0.95); align-items: center;
-    justify-content: center; padding: 1rem; }
-  #lightbox.active { display: flex; flex-direction: column; gap: 1rem; }
-  #lightbox img { max-width: 95vw; max-height: 80vh;
-    border: 2px solid #ff0000; border-radius: 8px;
-    box-shadow: 0 0 40px rgba(255,0,0,0.8); }
-  #lightbox .lb-close { padding: 0.6rem 1.5rem;
-    background: #8b0000; color: #fff; border: 1px solid #ff0000;
-    border-radius: 8px; cursor: pointer; font-family: inherit;
-    letter-spacing: 2px; text-transform: uppercase; font-size: 0.8rem; }
-  #lightbox .lb-close:hover { background: #ff0000; }
+  .preview-row img {
+    max-height: 60px;
+    max-width: 60px;
+    border: 1px solid var(--red);
+    border-radius: 8px;
+  }
+
+  .preview-row .info {
+    flex: 1;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .preview-row .remove {
+    padding: 0.4rem 0.75rem;
+    background: transparent;
+    border: 1px solid var(--red);
+    color: var(--red);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .preview-row .remove:hover {
+    background: var(--red);
+    color: #000;
+  }
+
+  /* ============ LIGHTBOX ============ */
+  #lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 500;
+    background: rgba(0, 0, 0, 0.95);
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  #lightbox.active { display: flex; }
+
+  #lightbox img {
+    max-width: 90vw;
+    max-height: 80vh;
+    border: 2px solid var(--red);
+    border-radius: 12px;
+    box-shadow: 0 0 60px rgba(255, 30, 60, 0.6);
+  }
+
+  #lightbox .close-btn {
+    padding: 0.75rem 2rem;
+    background: transparent;
+    border: 1px solid var(--red);
+    color: var(--red);
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  #lightbox .close-btn:hover {
+    background: var(--red);
+    color: #000;
+  }
+
+  /* ============ MOBILE ============ */
+  @media (max-width: 640px) {
+    body { padding: 1rem; }
+    .top-bar { padding: 0.85rem 1rem; }
+    .top-bar h2 { font-size: 0.8rem; letter-spacing: 3px; }
+    .chat-box { height: 50vh; }
+    .chat-input-row input[type="text"] { min-width: 100px; }
+    .char-counter { display: none; }
+    .chat-input-row button { padding: 0.85rem 1rem; }
+  }
 </style>
 </head>
 <body>
+
+<div class="bg-layer"></div>
 <canvas id="matrixCanvas"></canvas>
 
 <div id="app">
   <div class="top-bar">
-    <div style="display:flex;gap:0.5rem;align-items:center;">
+    <div class="top-bar-left">
       <a class="back-btn" href="dashboard.html">← Back</a>
       <h2>◈ General Chat</h2>
     </div>
-    <div style="display:flex;gap:0.5rem;align-items:center;">
-      <span id="userBadge" style="padding:0.35rem 0.8rem;border:1px solid #ff0000;border-radius:20px;
-        background:rgba(255,0,0,0.1);color:#ff6666;font-size:0.7rem;letter-spacing:2px;"></span>
+    <div class="top-bar-right">
+      <span class="user-badge" id="userBadge">—</span>
       <button class="logout-btn" id="logoutBtn">⏻ Exit</button>
     </div>
   </div>
 
   <div class="card">
     <div class="card-title">
-      ◈ Encrypted Channel
-      <span class="points" id="pointsInfo">0 / 500 points</span>
+      <span>◈ Encrypted Channel</span>
+      <span class="points-info" id="pointsInfo">0 / 500 points</span>
     </div>
 
     <div class="chat-box" id="chatBox">
-      <div class="empty-msg">◈ loading messages... ◈</div>
+      <div class="empty-msg">◈ Loading messages... ◈</div>
     </div>
 
     <div class="preview-row" id="previewRow">
@@ -162,7 +546,7 @@
     <div class="chat-input-row">
       <label class="file-btn" for="chatFileInput" title="Attach image (10 pts)">📎</label>
       <input type="file" id="chatFileInput" style="display:none" accept="image/*">
-      <input type="text" id="chatInput" placeholder="type a message (max 350)..." autocomplete="off" maxlength="350">
+      <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off" maxlength="350">
       <span class="char-counter" id="charCounter">0 / 350</span>
       <button id="chatSend">▸ Send</button>
     </div>
@@ -171,15 +555,17 @@
 
 <div id="lightbox">
   <img id="lightboxImg" src="" alt="">
-  <button class="lb-close" onclick="document.getElementById('lightbox').classList.remove('active')">✕ Close</button>
+  <button class="close-btn" onclick="document.getElementById('lightbox').classList.remove('active')">✕ Close</button>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, getDocs }
-  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import {
+  getFirestore, collection, addDoc, getDocs,
+  deleteDoc, doc, query, orderBy, getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBZbzltfXXt39cGeNYhrgfQCyd770xSq9g",
@@ -194,73 +580,129 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* ---------- Point system ---------- */
+/* ============ IMGBB API KEY ============ */
+const IMGBB_API_KEY = "98f875ce16259f1162f59f8da017a85e";
+const IMGBB_UPLOAD_URL = "https://api.imgbb.com/1/upload";
+
+/* ============ POINT SYSTEM ============ */
 const MAX_POINTS = 500;
 const IMG_POINTS = 10;
 const EMOJI_POINTS = 5;
 const MAX_CHARS = 350;
 
-/* ---------- Current user ---------- */
-let currentUser = null;
+/* ============ MATRIX RAIN (30 FPS) ============ */
+const mc = document.getElementById('matrixCanvas');
+const mctx = mc.getContext('2d');
+let mcWidth, mcHeight, matrixCols, matrixDrops;
+const matrixFontSize = 16;
+const matrixChars = 'アカサタナハマヤラワ0123456789ABCDEF';
 
-/* ---------- DOM refs ---------- */
-const chatBox = document.getElementById('chatBox');
-const chatInput = document.getElementById('chatInput');
-const chatSend = document.getElementById('chatSend');
-const chatFileInput = document.getElementById('chatFileInput');
-const charCounter = document.getElementById('charCounter');
-const pointsInfo = document.getElementById('pointsInfo');
-const userBadge = document.getElementById('userBadge');
-const previewRow = document.getElementById('previewRow');
-const previewImg = document.getElementById('previewImg');
-const previewInfo = document.getElementById('previewInfo');
-const previewRemove = document.getElementById('previewRemove');
+function initMatrix(){
+  mcWidth = mc.width = innerWidth;
+  mcHeight = mc.height = innerHeight;
+  matrixCols = Math.floor(mcWidth / matrixFontSize);
+  matrixDrops = new Array(matrixCols).fill(1);
+}
+initMatrix();
 
-let pendingImage = null;
+let resizeTimer;
+addEventListener('resize', function(){
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(initMatrix, 200);
+});
 
-/* ---------- Matrix BG ---------- */
-const canvas = document.getElementById('matrixCanvas');
-const ctx = canvas.getContext('2d');
-function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
-resize(); addEventListener('resize', resize);
-const chars = 'アカサタナハマヤラワ0123456789ABCDEF';
-const fs = 14;
-const drops = Array(Math.floor(canvas.width / fs)).fill(1);
-setInterval(function(){
-  ctx.fillStyle = 'rgba(0,0,0,0.06)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.fillStyle = '#ff0000';
-  ctx.font = fs + 'px monospace';
-  for (let i=0;i<drops.length;i++){
-    const t = chars[Math.floor(Math.random()*chars.length)];
-    ctx.fillText(t, i*fs, drops[i]*fs);
-    if (drops[i]*fs > canvas.height && Math.random() > 0.975) drops[i] = 0;
-    drops[i]++;
+let lastMatrixTime = 0;
+const MATRIX_INTERVAL = 1000 / 30;
+
+function drawMatrix(now){
+  requestAnimationFrame(drawMatrix);
+  if (document.hidden) return;
+  if (now - lastMatrixTime < MATRIX_INTERVAL) return;
+  lastMatrixTime = now;
+
+  mctx.fillStyle = 'rgba(3, 3, 8, 0.08)';
+  mctx.fillRect(0, 0, mcWidth, mcHeight);
+  mctx.font = matrixFontSize + 'px JetBrains Mono, monospace';
+
+  for (let i = 0; i < matrixDrops.length; i++){
+    const text = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+    const x = i * matrixFontSize;
+    const y = matrixDrops[i] * matrixFontSize;
+
+    mctx.fillStyle = Math.random() > 0.985 ? '#ffffff' : '#ff1e3c';
+    mctx.fillText(text, x, y);
+
+    if (y > mcHeight && Math.random() > 0.975) matrixDrops[i] = 0;
+    matrixDrops[i]++;
   }
-}, 50);
+}
+requestAnimationFrame(drawMatrix);
 
-/* ---------- Auth check ---------- */
-onAuthStateChanged(auth, function(user){
+/* ============ AUTH ============ */
+let currentUser = null;
+let currentRealName = '';
+
+onAuthStateChanged(auth, async function(user){
   if (!user){
     window.location.replace('index.html');
     return;
   }
-  const stored = sessionStorage.getItem('abyss_user');
-  currentUser = stored || user.email.split('@')[0];
-  userBadge.textContent = currentUser;
 
-  if (stored) sessionStorage.setItem('abyss_user', stored);
+  const stored = sessionStorage.getItem('abyss_user');
+  if (stored){
+    currentUser = stored;
+  } else {
+    const emailUser = user.email.split('@')[0];
+    currentUser = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
+    sessionStorage.setItem('abyss_user', currentUser);
+  }
+
+  document.getElementById('userBadge').textContent = currentUser;
+
+  // ✅ جيب الاسم الحقيقي من Firestore
+  try {
+    const accSnap = await getDoc(doc(db, 'accounts', currentUser));
+    if (accSnap.exists() && accSnap.data().realName){
+      currentRealName = accSnap.data().realName;
+    }
+  } catch(e){
+    console.error('Failed to load realName:', e);
+  }
+
+  // ✅ افحص الحالة (locked / suspended)
+  try {
+    const statusSnap = await getDoc(doc(db, 'settings', 'global'));
+    if (statusSnap.exists()){
+      const data = statusSnap.data();
+      const isOwner = currentUser.toLowerCase() === 'devil-0';
+      if (!isOwner){
+        if (data.locked){
+          alert('⛓ The Abyss is locked by the creator.');
+          await signOut(auth);
+          window.location.replace('index.html');
+          return;
+        }
+        if ((data.suspended || []).indexOf(currentUser) !== -1){
+          alert('🚫 Your account is suspended.');
+          await signOut(auth);
+          window.location.replace('index.html');
+          return;
+        }
+      }
+    }
+  } catch(e){}
+
   loadMessages();
+  setInterval(loadMessages, 3000);
 });
 
-/* ---------- Logout ---------- */
 document.getElementById('logoutBtn').addEventListener('click', async function(){
   sessionStorage.removeItem('abyss_user');
   await signOut(auth);
   window.location.replace('index.html');
 });
 
-/* ---------- Helpers ---------- */
+/* ============ HELPERS ============ */
 function escapeHtml(s){
   return String(s||'').replace(/[&<>"']/g, function(c){
     return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
@@ -277,8 +719,7 @@ function countEmojis(str){
 function pointsForText(text){
   const t = String(text||'');
   const emojiCount = countEmojis(t);
-  const normalChars = t.length - emojiCount;
-  return normalChars * 1 + emojiCount * EMOJI_POINTS;
+  return (t.length - emojiCount) * 1 + emojiCount * EMOJI_POINTS;
 }
 
 function pointsForMessage(msg){
@@ -297,45 +738,55 @@ function formatTime(ts){
   const now = new Date();
   const sameDay = d.toDateString() === now.toDateString();
   const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  return sameDay ? time : d.toLocaleDateString() + ' ' + time;
+  return sameDay ? time : d.toLocaleDateString() + ' · ' + time;
 }
 
-/* ---------- Live listen to messages ---------- */
+/* ============ LOAD MESSAGES ============ */
 let allMessages = [];
+let isLoadingMessages = false;
 
-function loadMessages(){
-  const q = query(collection(db, 'messages'), orderBy('time', 'asc'));
-  onSnapshot(q, function(snap){
+async function loadMessages(){
+  if (isLoadingMessages) return;
+  isLoadingMessages = true;
+
+  try {
+    const q = query(collection(db, 'messages'), orderBy('time', 'asc'));
+    const snap = await getDocs(q);
     allMessages = [];
     snap.forEach(function(d){
       allMessages.push(Object.assign({ id: d.id }, d.data()));
     });
     renderChat();
-  }, function(err){
+  } catch(err){
     console.error('Firestore error:', err);
-    chatBox.innerHTML = '<div class="empty-msg">⚠ failed to load messages</div>';
-  });
+  }
+
+  isLoadingMessages = false;
 }
 
 function renderChat(){
+  const chatBox = document.getElementById('chatBox');
   chatBox.innerHTML = '';
+
   if (!allMessages.length){
     chatBox.innerHTML = '<div class="empty-msg">◈ no messages yet — be the first ◈</div>';
     updatePoints();
     return;
   }
 
- allMessages.forEach(function(m){
-  const div = document.createElement('div');
-  div.className = 'chat-msg';
-  
-  // ✅ جيب الاسم الحقيقي من البيانات
-  const realName = m.realName ? ' · ' + m.realName : '';
-  
-  let inner = '<div class="header">' +
-                '<span class="author">' + escapeHtml(m.author) + escapeHtml(realName) + '</span>' +
-                '<span class="time">' + formatTime(m.time) + '</span>' +
-              '</div>';
+  allMessages.forEach(function(m){
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+
+    const realNameHtml = m.realName
+      ? '<span class="realname">· ' + escapeHtml(m.realName) + '</span>'
+      : '';
+
+    let inner = '<div class="header">' +
+                  '<span class="author">' + escapeHtml(m.author) + realNameHtml + '</span>' +
+                  '<span class="time">' + formatTime(m.time) + '</span>' +
+                '</div>';
+
     if (m.text){
       inner += '<div class="content">' + escapeHtml(m.text) + '</div>';
     }
@@ -346,7 +797,6 @@ function renderChat(){
     chatBox.appendChild(div);
   });
 
-  // lightbox
   chatBox.querySelectorAll('img[data-img]').forEach(function(img){
     img.addEventListener('click', function(){
       document.getElementById('lightboxImg').src = img.src;
@@ -360,14 +810,49 @@ function renderChat(){
 
 function updatePoints(){
   const total = totalPoints(allMessages);
-  pointsInfo.textContent = total + ' / ' + MAX_POINTS + ' points';
-  pointsInfo.classList.remove('warn','full');
-  if (total >= MAX_POINTS) pointsInfo.classList.add('full');
-  else if (total >= MAX_POINTS * 0.75) pointsInfo.classList.add('warn');
+  const el = document.getElementById('pointsInfo');
+  el.textContent = total + ' / ' + MAX_POINTS + ' points';
+  el.classList.remove('warn', 'full');
+  if (total >= MAX_POINTS) el.classList.add('full');
+  else if (total >= MAX_POINTS * 0.75) el.classList.add('warn');
 }
 
-/* ---------- Send ---------- */
+/* ============ UPLOAD TO IMGBB ============ */
+async function uploadToImgBB(file){
+  const formData = new FormData();
+  formData.append('image', file);
+
+  return new Promise(function(resolve, reject){
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', IMGBB_UPLOAD_URL + '?key=' + IMGBB_API_KEY);
+    xhr.onload = function(){
+      if (xhr.status >= 200 && xhr.status < 300){
+        try {
+          const res = JSON.parse(xhr.responseText);
+          if (res.success && res.data){
+            resolve({
+              url: res.data.url,
+              size: res.data.size || file.size,
+              name: res.data.title || file.name
+            });
+          } else {
+            reject(new Error('Upload failed'));
+          }
+        } catch(e){ reject(e); }
+      } else {
+        reject(new Error('HTTP ' + xhr.status));
+      }
+    };
+    xhr.onerror = function(){ reject(new Error('Network error')); };
+    xhr.send(formData);
+  });
+}
+
+/* ============ SEND MESSAGE ============ */
+let pendingImage = null;
+
 async function sendMessage(){
+  const chatInput = document.getElementById('chatInput');
   const text = chatInput.value.trim();
   if (!text && !pendingImage) return;
   if (text.length > MAX_CHARS){
@@ -375,33 +860,21 @@ async function sendMessage(){
     return;
   }
 
+  const chatSend = document.getElementById('chatSend');
   chatSend.disabled = true;
 
   try {
-    // ✅ اجلب الاسم الحقيقي من Firestore (مرة واحدة، ويُخزّن)
-    let realName = sessionStorage.getItem('abyss_realname_' + currentUser);
-    if (!realName){
-      try {
-        const accSnap = await getDoc(doc(db, 'accounts', currentUser));
-        if (accSnap.exists() && accSnap.data().realName){
-          realName = accSnap.data().realName;
-          sessionStorage.setItem('abyss_realname_' + currentUser, realName);
-        }
-      } catch(e){}
-    }
-
     await addDoc(collection(db, 'messages'), {
       author: currentUser,
-      realName: realName || '',
+      realName: currentRealName || '',
       text: text,
-      image: pendingImage ? pendingImage.data : null,
+      image: pendingImage ? pendingImage.url : null,
       time: Date.now()
     });
 
     // Trim oldest if over MAX_POINTS
     const total = totalPoints(allMessages);
     if (total > MAX_POINTS && allMessages.length > 1){
-      // delete oldest
       const oldest = allMessages[0];
       if (oldest && oldest.id){
         try { await deleteDoc(doc(db, 'messages', oldest.id)); } catch(e){}
@@ -411,6 +884,7 @@ async function sendMessage(){
     chatInput.value = '';
     updateCharCounter();
     clearPreview();
+    await loadMessages();
   } catch (err){
     console.error(err);
     alert('⚠ Failed to send: ' + err.message);
@@ -419,56 +893,81 @@ async function sendMessage(){
   chatSend.disabled = false;
 }
 
-/* ---------- Char counter ---------- */
+/* ============ CHAR COUNTER ============ */
 function updateCharCounter(){
-  const len = chatInput.value.length;
-  charCounter.textContent = len + ' / ' + MAX_CHARS;
-  charCounter.classList.remove('warn','over');
-  if (len > MAX_CHARS) charCounter.classList.add('over');
-  else if (len > MAX_CHARS * 0.8) charCounter.classList.add('warn');
+  const input = document.getElementById('chatInput');
+  const el = document.getElementById('charCounter');
+  const len = input.value.length;
+  el.textContent = len + ' / ' + MAX_CHARS;
+  el.classList.remove('warn', 'over');
+  if (len > MAX_CHARS) el.classList.add('over');
+  else if (len > MAX_CHARS * 0.8) el.classList.add('warn');
 }
 
-/* ---------- Preview ---------- */
-function showPreview(data, size){
-  pendingImage = { data: data, size: size };
-  previewImg.src = data;
-  previewInfo.textContent = 'image ready · ' + (size/1024).toFixed(1) + ' KB · costs ' + IMG_POINTS + ' points';
-  previewRow.classList.add('active');
+/* ============ PREVIEW ============ */
+function showPreview(url, size){
+  pendingImage = { url: url, size: size };
+  document.getElementById('previewImg').src = url;
+  document.getElementById('previewInfo').textContent =
+    'Image ready · ' + (size/1024).toFixed(1) + ' KB · costs ' + IMG_POINTS + ' pts';
+  document.getElementById('previewRow').classList.add('active');
 }
+
 function clearPreview(){
   pendingImage = null;
-  previewImg.src = '';
-  previewInfo.textContent = '';
-  previewRow.classList.remove('active');
+  document.getElementById('previewImg').src = '';
+  document.getElementById('previewInfo').textContent = '';
+  document.getElementById('previewRow').classList.remove('active');
 }
 
-/* ---------- Events ---------- */
-chatSend.addEventListener('click', sendMessage);
-chatInput.addEventListener('keypress', function(e){
+/* ============ EVENT LISTENERS ============ */
+document.getElementById('chatSend').addEventListener('click', sendMessage);
+
+document.getElementById('chatInput').addEventListener('keypress', function(e){
   if (e.key === 'Enter'){ e.preventDefault(); sendMessage(); }
 });
-chatInput.addEventListener('input', updateCharCounter);
-previewRemove.addEventListener('click', clearPreview);
 
-chatFileInput.addEventListener('change', function(e){
+document.getElementById('chatInput').addEventListener('input', updateCharCounter);
+
+document.getElementById('previewRemove').addEventListener('click', clearPreview);
+
+document.getElementById('chatFileInput').addEventListener('change', async function(e){
   const file = e.target.files[0];
   if (!file) return;
+
   if (!file.type.startsWith('image/')){
     alert('⚠ Only images are supported.');
-    chatFileInput.value = '';
+    e.target.value = '';
     return;
   }
-  if (file.size > 800 * 1024){
-    alert('⚠ Image too large (max 800 KB) — Firestore has a 1 MB limit.');
-    chatFileInput.value = '';
+  if (file.size > 5 * 1024 * 1024){
+    alert('⚠ Image too large (max 5 MB).');
+    e.target.value = '';
     return;
   }
-  const reader = new FileReader();
-  reader.onload = function(){
-    showPreview(reader.result, file.size);
-  };
-  reader.readAsDataURL(file);
-  chatFileInput.value = '';
+
+  const btn = document.getElementById('chatSend');
+  btn.disabled = true;
+  btn.textContent = '◈ Uploading...';
+
+  try {
+    const result = await uploadToImgBB(file);
+    showPreview(result.url, result.size);
+  } catch(err){
+    console.error(err);
+    alert('⚠ Upload failed: ' + err.message);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '▸ Send';
+  e.target.value = '';
+});
+
+// ESC to close lightbox
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape'){
+    document.getElementById('lightbox').classList.remove('active');
+  }
 });
 
 updateCharCounter();
