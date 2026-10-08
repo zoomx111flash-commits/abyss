@@ -112,8 +112,10 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged }
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBZbzltfXXt39cGeNYhrgfQCyd770xSq9g",
@@ -126,8 +128,35 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
+
+const ADMIN_USER = "Devil-0";
 
 function email(id){ return id.toLowerCase() + "@abyss.local"; }
+
+/* ✅ فحص حالة الحساب: مقفل؟ معلق؟ */
+async function checkStatus(username){
+  try {
+    const snap = await getDoc(doc(db, 'settings', 'global'));
+    if (!snap.exists()) return { ok: true };
+    const data = snap.data();
+    const isOwner = username.toLowerCase() === ADMIN_USER.toLowerCase();
+
+    if (!isOwner){
+      if (data.locked === true){
+        return { ok: false, reason: 'locked' };
+      }
+      const suspended = data.suspended || [];
+      if (suspended.indexOf(username) !== -1){
+        return { ok: false, reason: 'suspended' };
+      }
+    }
+    return { ok: true };
+  } catch(e){
+    console.error('checkStatus error:', e);
+    return { ok: true };
+  }
+}
 
 const form = document.getElementById('loginForm');
 const userInput = document.getElementById('loginUser');
@@ -145,7 +174,7 @@ function shake(){
   setTimeout(function(){ card.classList.remove('shake'); }, 500);
 }
 
-// Matrix BG
+/* Matrix BG */
 const canvas = document.getElementById('matrixCanvas');
 const ctx = canvas.getContext('2d');
 function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
@@ -166,10 +195,26 @@ setInterval(function(){
   }
 }, 50);
 
-// Auto-redirect if already logged in
-onAuthStateChanged(auth, function(user){
+/* Auto-redirect if already logged in */
+onAuthStateChanged(auth, async function(user){
   if (user){
-    sessionStorage.setItem('abyss_user', user.email.split('@')[0]);
+    const emailUser = user.email.split('@')[0];
+    const formatted = emailUser.charAt(0).toUpperCase() + emailUser.slice(1);
+    const status = await checkStatus(formatted);
+
+    if (!status.ok){
+      await signOut(auth);
+      sessionStorage.removeItem('abyss_user');
+      if (status.reason === 'locked'){
+        setMsg('⛓ The Abyss is locked by the creator.', 'error');
+      } else {
+        setMsg('🚫 Your account is suspended.', 'error');
+      }
+      shake();
+      return;
+    }
+
+    sessionStorage.setItem('abyss_user', formatted);
     window.location.replace('dashboard.html');
   }
 });
@@ -184,8 +229,25 @@ form.addEventListener('submit', async function(e){
   setMsg('◈ decrypting...', 'info');
 
   try {
-    var cred = await signInWithEmailAndPassword(auth, email(u), p);
-    sessionStorage.setItem('abyss_user', u);
+    await signInWithEmailAndPassword(auth, email(u), p);
+    const formatted = u.charAt(0).toUpperCase() + u.slice(1);
+
+    // ✅ فحص الحالة
+    const status = await checkStatus(formatted);
+    if (!status.ok){
+      await signOut(auth);
+      sessionStorage.removeItem('abyss_user');
+      if (status.reason === 'locked'){
+        setMsg('⛓ The Abyss is locked by the creator.', 'error');
+      } else {
+        setMsg('🚫 This account is suspended. لا توجد فائدة من الدخول.', 'error');
+      }
+      shake();
+      btn.disabled = false;
+      return;
+    }
+
+    sessionStorage.setItem('abyss_user', formatted);
     setMsg('✓ access granted — entering...', 'success');
     setTimeout(function(){
       window.location.replace('dashboard.html');
